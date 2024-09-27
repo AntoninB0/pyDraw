@@ -1,5 +1,11 @@
 #include <SDL2/SDL.h>
+#include <SDL2_gfxPrimitives.h>
 #include <stdio.h>
+
+#define WIDTH 600 
+#define HEIGHT 800
+
+
 
 int main(int argc, char* argv[]) {
     // Initialiser SDL
@@ -12,7 +18,7 @@ int main(int argc, char* argv[]) {
     SDL_Window* window = SDL_CreateWindow("Fenêtre SDL2", 
                                           SDL_WINDOWPOS_UNDEFINED, 
                                           SDL_WINDOWPOS_UNDEFINED, 
-                                          800, 600, 
+                                          HEIGHT, WIDTH, 
                                           SDL_WINDOW_SHOWN);
                                           
     if (!window) {
@@ -20,6 +26,13 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
+
+
+
+
+
+
+
 
     // Gérer l'événement de fermeture
     SDL_Event e;
