@@ -21,3 +21,23 @@ sudo apt-get install libsdl2-gfx-dev
 cd c
 make -f ./MAKEFILE run
 ```
+
+##Github Basic Setup
+
+Setup email
+```bash
+git config --global user.email "you@example.com"
+git config --global user.name "cameronmcnz"
+```
+
+Code on your own branch
+```bash
+git checkout -b yourName
+git branch
+```
+Push on your branch 
+```bash
+git fetch
+git pull
+git push
+```
