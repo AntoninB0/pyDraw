@@ -1,11 +1,11 @@
 # Compiler
 CC = gcc
 
-# Options de compilation (avec les options spécifiques à SDL2 via sdl2-config)
-CFLAGS = -Wall -g `sdl2-config --cflags`
+# Options de compilation (avec les options spécifiques à SDL2 et SDL2_gfx via sdl2-config)
+CFLAGS = -Wall -g `sdl2-config --cflags` -I/usr/include/SDL2 -I/usr/include/SDL2_gfx
 
-# Options de liaison (pour lier les bibliothèques SDL2)
-LDFLAGS = `sdl2-config --libs`
+# Options de liaison (pour lier les bibliothèques SDL2 et SDL2_gfx)
+LDFLAGS = `sdl2-config --libs` -lSDL2_gfx
 
 # Nom de l'exécutable
 TARGET = my_sdl_program
