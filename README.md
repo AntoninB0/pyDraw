@@ -12,3 +12,9 @@ make
 sudo make install 
 ```
     
+## Run C Prog
+
+```bash
+cd c
+make -f ./MAKEFILE run
+```
