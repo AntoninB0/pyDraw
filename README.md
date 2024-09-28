@@ -22,7 +22,7 @@ cd c
 make -f ./MAKEFILE run
 ```
 
-##Github Basic Setup
+## Github Basic Setup
 
 Setup email
 ```bash
