@@ -1,11 +1,11 @@
 # Compiler
 CC = gcc
 
-# Options de compilation (avec les options spécifiques à SDL2 et SDL2_gfx via sdl2-config)
+# Options de compilation
 CFLAGS = -Wall -g `sdl2-config --cflags` -I/usr/include/SDL2 -I/usr/include/SDL2_gfx
 
-# Options de liaison (pour lier les bibliothèques SDL2 et SDL2_gfx)
-LDFLAGS = `sdl2-config --libs` -lSDL2_gfx
+# Options de liaison
+LDFLAGS = `sdl2-config --libs` -lSDL2_gfx -lm
 
 # Nom de l'exécutable
 TARGET = my_sdl_program
@@ -16,28 +16,35 @@ BUILDDIR = build
 # Fichiers sources
 SRC = main.c
 
-# Fichiers objets (dans le dossier build)
+# Fichiers objets
 OBJ = $(BUILDDIR)/main.o
 
-# Règle par défaut : compilation complète
+# README
+README = ../README.md
+
+# Règle par défaut
 all: $(BUILDDIR) $(BUILDDIR)/$(TARGET)
 
 # Créer le dossier build si nécessaire
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
 
-# Lien des objets pour créer l'exécutable dans le dossier build
+# Lien des objets
 $(BUILDDIR)/$(TARGET): $(OBJ)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-# Compilation des fichiers sources en fichiers objets dans le dossier build
+# Compilation des fichiers sources
 $(BUILDDIR)/%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Nettoyage des fichiers objets, de l'exécutable, et du dossier build
+# Nettoyage
 clean:
 	rm -rf $(BUILDDIR)
 
-# Exécuter le programme depuis le dossier build
-run: $(BUILDDIR)/$(TARGET)
+# Exécuter le programme
+run: $(BUILDDIR)/$(TARGET) readme
 	./$(BUILDDIR)/$(TARGET)
+
+# Afficher le README
+readme:
+	cat $(README)
