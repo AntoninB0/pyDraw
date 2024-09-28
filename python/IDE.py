@@ -141,3 +141,6 @@ quit_button.grid(row=3, column=0, padx=10, pady=5)
 
 # Lancer l'application
 root.mainloop()
+
+
+print("test update")
