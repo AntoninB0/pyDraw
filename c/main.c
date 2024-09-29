@@ -67,6 +67,13 @@ void initMatrix() {
     }
 }
 
+int compareSDLColors(SDL_Color color1, SDL_Color color2) {
+    return (color1.r == color2.r &&
+            color1.g == color2.g &&
+            color1.b == color2.b &&
+            color1.a == color2.a);
+}
+
 SDL_Color defineColor(int r, int g, int b, int a){
     SDL_Color color;
 
@@ -85,7 +92,7 @@ SDL_Color defineColor(int r, int g, int b, int a){
     return color;
 }
 
-void RenderMatrix() {
+void renderMatrix() {
     for (int i = 0; i < WIDTH; i++) {
         for (int e = 0; e < HEIGHT; e++) {
             SDL_SetRenderDrawColor(renderer, matrix[i][e].r, matrix[i][e].g, matrix[i][e].b, matrix[i][e].a);
@@ -104,7 +111,7 @@ void clearMatrix(SDL_Color color) {
             matrix[i][e].a = color.a;
         }
     }
-    RenderMatrix();
+    renderMatrix();
 }
 
 SDL_Window * initSDL() {
@@ -133,7 +140,7 @@ SDL_Window * initSDL() {
         exit(1);
     }
 
-    RenderMatrix();
+    renderMatrix();
     return window;
 }
 
@@ -256,7 +263,7 @@ PEN lineWrite(int length, PEN pen) {
     pen.x = endX;
     pen.y = endY;
 
-    RenderMatrix();
+    renderMatrix();
     return pen;
 }
 
@@ -287,12 +294,50 @@ void cirleWrite(int radius, PEN pen) {
         }
     }
 
-    RenderMatrix();
+    renderMatrix();
 }
+
+SDL_Color pixelColor(int x, int y){
+    return matrix[x][y];
+}
+
+void fill(int x, int y, SDL_Color color2Change, SDL_Color colorReplace) {
+    if (!compareSDLColors(color2Change, colorReplace)) {
+        POS *stack = malloc(WIDTH * HEIGHT * sizeof(POS));
+        int top = 0;
+
+        stack[top++] = (POS){x, y};
+
+        while (top > 0) {
+            POS item = stack[--top];
+            int cx = item.x;
+            int cy = item.y;
+
+            if (cx >= 0 && cx < WIDTH && cy >= 0 && cy < HEIGHT && compareSDLColors(matrix[cx][cy], color2Change)) {
+                matrix[cx][cy] = colorReplace;
+
+                // Ajouter les voisins à la pile
+                if (cx + 1 < WIDTH) stack[top++] = (POS){cx + 1, cy};
+                if (cx - 1 >= 0) stack[top++] = (POS){cx - 1, cy};
+                if (cy + 1 < HEIGHT) stack[top++] = (POS){cx, cy + 1};
+                if (cy - 1 >= 0) stack[top++] = (POS){cx, cy - 1};
+            }
+        }
+
+        free(stack);
+    }
+}
+
+void fillColor(int x, int y, SDL_Color color){
+    fill(x, y, pixelColor(x, y), color);
+    renderMatrix();
+}
+
+
 
 void test(PEN pen){
     cirleWrite(300, pen);
-
+    fillColor((int)(WIDTH / 2), (int)(HEIGHT / 2), defineColor(COLOR_BLUE));
     pen.angle = 50;
     pen = lineWrite(100, pen);
 
@@ -314,12 +359,15 @@ void test(PEN pen){
         }
         pen = lineWrite(500, pen);
     }
+    fillColor((int)(WIDTH / 2 + 20), (int)(HEIGHT / 2), defineColor(COLOR_GREEN));
+    WAIT
     clearMatrix(defineColor(COLOR_RED));
     WAIT
     clearMatrix(defineColor(COLOR_GREEN));
     clearMatrix(defineColor(COLOR_BLUE));
 
 }
+
 
 
 int main(int argc, char* argv[]) {
