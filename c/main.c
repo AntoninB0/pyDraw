@@ -271,11 +271,9 @@ void cirleWrite(int radius, PEN pen) {
     int centerX = approxPosX(pen.x);
     int centerY = approxPosY(pen.y);
 
-    // Calcul du rayon intérieur et extérieur en tenant compte de la taille du trait
     float innerRadiusSquared = (radius - pen.size/2.0f) * (radius - pen.size/2.0f);
     float outerRadiusSquared = (radius + pen.size/2.0f) * (radius + pen.size/2.0f);
 
-    // Ajuster la zone de dessin pour inclure l'épaisseur du trait
     int drawRadius = radius + pen.size/2;
 
     for (int y = -drawRadius; y <= drawRadius; y++) {
@@ -304,6 +302,8 @@ SDL_Color pixelColor(int x, int y){
 void fill(int x, int y, SDL_Color color2Change, SDL_Color colorReplace) {
     if (!compareSDLColors(color2Change, colorReplace)) {
         POS *stack = malloc(WIDTH * HEIGHT * sizeof(POS));
+        if(stack==NULL)exit(1);
+
         int top = 0;
 
         stack[top++] = (POS){x, y};
@@ -333,7 +333,74 @@ void fillColor(int x, int y, SDL_Color color){
     renderMatrix();
 }
 
+void rotateArea(int x, int y, int width, int height, float angle) {
+    int maxDimension = (int)ceil(sqrt(width * width + height * height));
+    int offsetX = (maxDimension - width) / 2;
+    int offsetY = (maxDimension - height) / 2;
 
+    SDL_Color** tempMatrix = malloc(sizeof(SDL_Color*) * maxDimension);
+    for (int i = 0; i < maxDimension; i++) {
+        tempMatrix[i] = malloc(sizeof(SDL_Color) * maxDimension);
+        for (int j = 0; j < maxDimension; j++) {
+            tempMatrix[i][j] = (SDL_Color){0, 0, 0, 0};
+        }
+    }
+
+    float centerX = width / 2.0f;
+    float centerY = height / 2.0f;
+    float cosAngle = cos(-angle);
+    float sinAngle = sin(-angle);
+
+    for (int destX = 0; destX < maxDimension; destX++) {
+        for (int destY = 0; destY < maxDimension; destY++) {
+            float srcX = (destX - offsetX - centerX) * cosAngle - (destY - offsetY - centerY) * sinAngle + centerX;
+            float srcY = (destX - offsetX - centerX) * sinAngle + (destY - offsetY - centerY) * cosAngle + centerY;
+
+            int srcXInt = (int)srcX;
+            int srcYInt = (int)srcY;
+
+            if (srcXInt >= 0 && srcXInt < width - 1 && srcYInt >= 0 && srcYInt < height - 1) {
+                float fx = srcX - srcXInt;
+                float fy = srcY - srcYInt;
+
+                SDL_Color c00 = matrix[x + srcXInt][y + srcYInt];
+                SDL_Color c10 = matrix[x + srcXInt + 1][y + srcYInt];
+                SDL_Color c01 = matrix[x + srcXInt][y + srcYInt + 1];
+                SDL_Color c11 = matrix[x + srcXInt + 1][y + srcYInt + 1];
+
+                Uint8 r = (1 - fx) * (1 - fy) * c00.r + fx * (1 - fy) * c10.r +
+                          (1 - fx) * fy * c01.r + fx * fy * c11.r;
+                Uint8 g = (1 - fx) * (1 - fy) * c00.g + fx * (1 - fy) * c10.g +
+                          (1 - fx) * fy * c01.g + fx * fy * c11.g;
+                Uint8 b = (1 - fx) * (1 - fy) * c00.b + fx * (1 - fy) * c10.b +
+                          (1 - fx) * fy * c01.b + fx * fy * c11.b;
+                Uint8 a = (1 - fx) * (1 - fy) * c00.a + fx * (1 - fy) * c10.a +
+                          (1 - fx) * fy * c01.a + fx * fy * c11.a;
+
+                tempMatrix[destX][destY] = (SDL_Color){r, g, b, a};
+            }
+        }
+    }
+
+    for (int i = 0; i < maxDimension; i++) {
+        for (int j = 0; j < maxDimension; j++) {
+            int targetX = x - offsetX + i;
+            int targetY = y - offsetY + j;
+            if (targetX >= 0 && targetX < WIDTH && targetY >= 0 && targetY < HEIGHT) {
+                if (tempMatrix[i][j].a > 0) {
+                    matrix[targetX][targetY] = tempMatrix[i][j];
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < maxDimension; i++) {
+        free(tempMatrix[i]);
+    }
+    free(tempMatrix);
+
+    renderMatrix();
+}
 
 void test(PEN pen){
     cirleWrite(300, pen);
@@ -360,6 +427,9 @@ void test(PEN pen){
         pen = lineWrite(500, pen);
     }
     fillColor((int)(WIDTH / 2 + 20), (int)(HEIGHT / 2), defineColor(COLOR_GREEN));
+
+    rotateArea((int)(WIDTH / 2 - 400), (int)(HEIGHT / 2), 400, 300, float2Rad(57));
+
     WAIT
     clearMatrix(defineColor(COLOR_RED));
     WAIT
