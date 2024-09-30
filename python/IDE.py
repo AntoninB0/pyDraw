@@ -202,3 +202,4 @@ quit_button.grid(row=3, column=0, padx=5, pady=2)  # Réduire le padding ici
 
 # Lancer la boucle principale
 root.mainloop()
+print("test")
