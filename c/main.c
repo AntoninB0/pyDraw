@@ -402,6 +402,15 @@ void rotateArea(int x, int y, int width, int height, float angle) {
     renderMatrix();
 }
 
+void copyPaste(int x, int y, int width, int height, int x1, int y1) {
+    for (int i = 0; i < width && (x + i) < WIDTH && (x1 + i) < WIDTH; i++) {
+        for (int j = 0; j < height && (y + j) < HEIGHT && (y1 + j) < HEIGHT; j++) {
+            matrix[x1+i][y1+j] = matrix[x+i][y+j];
+        }
+    }
+    renderMatrix();
+}
+
 void test(PEN pen){
     cirleWrite(300, pen);
     fillColor((int)(WIDTH / 2), (int)(HEIGHT / 2), defineColor(COLOR_BLUE));
@@ -430,6 +439,7 @@ void test(PEN pen){
 
     rotateArea((int)(WIDTH / 2 - 400), (int)(HEIGHT / 2), 400, 300, float2Rad(57));
 
+    copyPaste((int)(WIDTH / 2 - 400), (int)(HEIGHT / 2), 400, 300, (int)(WIDTH / 2 + 400), (int)(HEIGHT / 2));
     WAIT
     clearMatrix(defineColor(COLOR_RED));
     WAIT
