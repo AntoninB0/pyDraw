@@ -481,7 +481,7 @@ void copy(int x, int y, int width, int height){
     for (int i = 0; i < WIDTH; i++) {
         tempMatrix.matrix[i] = malloc(sizeof(SDL_Color) * HEIGHT);
         if (tempMatrix.matrix[i] == NULL) exit(1);
-
+    }
 
 
 
@@ -585,7 +585,7 @@ int main(int argc, char* argv[]) {
 
     fillColor((int)(WIDTH / 2 + 20), (int)(HEIGHT / 2), defineColor(COLOR_GREEN));
 
-    //test(pen);
+    test(pen);
 
 
     closeEventSDL();
