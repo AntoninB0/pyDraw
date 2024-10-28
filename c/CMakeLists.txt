@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.26)
 project(pyDraw C)
 
 set(CMAKE_C_STANDARD 11)
-#
+##
 # Définir les répertoires include et lib en fonction de l'architecture
 set(SDL2_INCLUDE_DIR C:/libs/SDL2-2.30.7/include)
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
