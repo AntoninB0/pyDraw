@@ -40,6 +40,7 @@ $(BUILDDIR)/%.o: %.c
 # Nettoyage
 clean:
 	rm -rf $(BUILDDIR)
+	mkdir -p $(BUILDDIR)
 
 # Exécuter le programme
 run: $(BUILDDIR)/$(TARGET) readme

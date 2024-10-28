@@ -41,15 +41,20 @@ typedef struct {
     int capacity;
 } Stack;
 
+typedef struct TEMPSDLMATRIX{
+    int height,width;
+    SDL_Color **matrix;
+}TEMPSDLMATRIX;
+
 void push(Stack *stack, POS pos);
 POS pop(Stack *stack);
 bool isEmpty(Stack *stack);
 void freeStack(Stack *stack);
 
-
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
 SDL_Color **matrix;
+TEMPSDLMATRIX tempMatrix;
 
 void waitKey(){
     SDL_Event event;
@@ -465,6 +470,59 @@ void copyPaste(int x, int y, int width, int height, int x1, int y1) {
     renderMatrix();
 }
 
+void copy(int x, int y, int width, int height){
+    if (tempMatrix.matrix!=NULL){
+
+    }
+
+    tempMatrix.matrix = malloc(sizeof(SDL_Color*) * WIDTH);
+    if (tempMatrix.matrix == NULL) exit(1);
+
+    for (int i = 0; i < WIDTH; i++) {
+        tempMatrix.matrix[i] = malloc(sizeof(SDL_Color) * HEIGHT);
+        if (tempMatrix.matrix[i] == NULL) exit(1);
+
+
+
+
+}
+
+
+
+void cut(int x, int y, int width, int height, int x1, int y1) {
+    SDL_Color blank;
+    blank.r = 255;
+    blank.g = 255;
+    blank.b = 255;
+
+    blank.a = 255;
+    for (int i = 0; i < width && (x + i) < WIDTH && (x1 + i) < WIDTH; i++) {
+        for (int j = 0; j < height && (y + j) < HEIGHT && (y1 + j) < HEIGHT; j++) {
+            matrix[x1+i][y1+j] = blank;
+        }
+    }
+    renderMatrix();
+}
+
+void translation(int x, int y, int width, int height, int lengh, float angle){
+    float angle_rad = float2Rad(angle);
+    float cos_angle = cosf(angle_rad);
+    float sin_angle = sinf(angle_rad);
+
+
+
+
+
+
+    for(int i=0;i<lengh*lengh;i++){
+        if (i!= 0) {
+            cut(x,y,width,height, x+(i-1)*cos_angle, y+(i-1)*sin_angle);
+            }
+        copyPaste(x,y,width,height, x+i*cos_angle, y+i*sin_angle);
+    }
+}
+
+
 void test(PEN pen){
     cirleWrite(300, pen);
     fillColor((int)(WIDTH / 2), (int)(HEIGHT / 2), defineColor(COLOR_BLUE));
@@ -494,6 +552,8 @@ void test(PEN pen){
     rotateArea((int)(WIDTH / 2 - 400), (int)(HEIGHT / 2), 400, 300, float2Rad(57));
 
     copyPaste((int)(WIDTH / 2 - 400), (int)(HEIGHT / 2), 400, 300, (int)(WIDTH / 2 + 400), (int)(HEIGHT / 2));
+
+    translation((int)(WIDTH / 2 - 200), (int)(HEIGHT / 2 - 200), 400,200,100,20);
     WAIT
     clearMatrix(defineColor(COLOR_RED));
     WAIT
