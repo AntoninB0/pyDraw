@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <math.h>
 
 #define WIDTH 1920
@@ -22,7 +23,7 @@
 
 #define WAIT waitKey();
 
-
+#define SPEED 300
 
 typedef struct PEN {
     int size, penDown;
@@ -33,6 +34,18 @@ typedef struct PEN {
 typedef struct POS {
     int x, y;
 } POS;
+
+typedef struct {
+    POS *data;
+    int size;
+    int capacity;
+} Stack;
+
+void push(Stack *stack, POS pos);
+POS pop(Stack *stack);
+bool isEmpty(Stack *stack);
+void freeStack(Stack *stack);
+
 
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
@@ -45,6 +58,18 @@ void waitKey(){
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_KEYDOWN) {
                 quit = 1;
+            }
+            if (event.type == SDL_QUIT) {
+                SDL_DestroyRenderer(renderer);
+                SDL_DestroyWindow(window);
+                SDL_Quit();
+
+                for (int i = 0; i < WIDTH; i++) {
+                    free(matrix[i]);
+                }
+                free(matrix);
+
+                exit(0);
             }
         }
     }
@@ -65,6 +90,27 @@ void initMatrix() {
             matrix[i][e].a = DEFAULTCOLOR_BG_A;
         }
     }
+}
+
+void closeEventSDL() {
+    SDL_Event e;
+    int quit = 0;
+    while (!quit) {
+        while (SDL_PollEvent(&e) != 0) {
+            if (e.type == SDL_QUIT) {
+                quit = 1;
+            }
+        }
+    }
+
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+
+    for (int i = 0; i < WIDTH; i++) {
+        free(matrix[i]);
+    }
+    free(matrix);
 }
 
 int compareSDLColors(SDL_Color color1, SDL_Color color2) {
@@ -99,6 +145,7 @@ void renderMatrix() {
             SDL_RenderDrawPoint(renderer, i, e);
         }
     }
+    SDL_Delay(SPEED);
     SDL_RenderPresent(renderer);
 }
 
@@ -114,7 +161,7 @@ void clearMatrix(SDL_Color color) {
     renderMatrix();
 }
 
-SDL_Window * initSDL() {
+void initSDL() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("Erreur d'initialisation de SDL: %s\n", SDL_GetError());
         exit(1);
@@ -141,29 +188,9 @@ SDL_Window * initSDL() {
     }
 
     renderMatrix();
-    return window;
 }
 
-void closeEventSDL() {
-    SDL_Event e;
-    int quit = 0;
-    while (!quit) {
-        while (SDL_PollEvent(&e) != 0) {
-            if (e.type == SDL_QUIT) {
-                quit = 1;
-            }
-        }
-    }
 
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-
-    for (int i = 0; i < WIDTH; i++) {
-        free(matrix[i]);
-    }
-    free(matrix);
-}
 
 int approxPosX(float x) {
     return (x - (int)x > 0.5) ? (int)x + 1 : (int)x;
@@ -301,32 +328,59 @@ SDL_Color pixelColor(int x, int y){
 
 void fill(int x, int y, SDL_Color color2Change, SDL_Color colorReplace) {
     if (!compareSDLColors(color2Change, colorReplace)) {
-        POS *stack = malloc(WIDTH * HEIGHT * sizeof(POS));
-        if(stack==NULL)exit(1);
 
-        int top = 0;
+        Stack stack = { .data = malloc(100 * sizeof(POS)), .size = 0, .capacity = 100 };
+        if (stack.data == NULL) {
+            fprintf(stderr, "Allocation de la pile échouée.\n");
+            exit(1);
+        }
 
-        stack[top++] = (POS){x, y};
+        push(&stack, (POS){x, y});
 
-        while (top > 0) {
-            POS item = stack[--top];
+        while (!isEmpty(&stack)) {
+            POS item = pop(&stack);
             int cx = item.x;
             int cy = item.y;
 
             if (cx >= 0 && cx < WIDTH && cy >= 0 && cy < HEIGHT && compareSDLColors(matrix[cx][cy], color2Change)) {
                 matrix[cx][cy] = colorReplace;
 
-                // Ajouter les voisins à la pile
-                if (cx + 1 < WIDTH) stack[top++] = (POS){cx + 1, cy};
-                if (cx - 1 >= 0) stack[top++] = (POS){cx - 1, cy};
-                if (cy + 1 < HEIGHT) stack[top++] = (POS){cx, cy + 1};
-                if (cy - 1 >= 0) stack[top++] = (POS){cx, cy - 1};
+                // Ajouter les voisins si valides
+                if (cx + 1 < WIDTH && compareSDLColors(matrix[cx + 1][cy], color2Change)) push(&stack, (POS){cx + 1, cy});
+                if (cx - 1 >= 0 && compareSDLColors(matrix[cx - 1][cy], color2Change)) push(&stack, (POS){cx - 1, cy});
+                if (cy + 1 < HEIGHT && compareSDLColors(matrix[cx][cy + 1], color2Change)) push(&stack, (POS){cx, cy + 1});
+                if (cy - 1 >= 0 && compareSDLColors(matrix[cx][cy - 1], color2Change)) push(&stack, (POS){cx, cy - 1});
             }
         }
 
-        free(stack);
+        freeStack(&stack);
     }
 }
+
+void push(Stack *stack, POS pos) {
+    if (stack->size >= stack->capacity) {
+        stack->capacity *= 2;
+        stack->data = realloc(stack->data, stack->capacity * sizeof(POS));
+        if (stack->data == NULL) {
+            fprintf(stderr, "Réallocation de la pile échouée.\n");
+            exit(1);
+        }
+    }
+    stack->data[stack->size++] = pos;
+}
+
+POS pop(Stack *stack) {
+    return stack->data[--stack->size];
+}
+
+bool isEmpty(Stack *stack) {
+    return stack->size == 0;
+}
+
+void freeStack(Stack *stack) {
+    free(stack->data);
+}
+
 
 void fillColor(int x, int y, SDL_Color color){
     fill(x, y, pixelColor(x, y), color);
@@ -346,8 +400,8 @@ void rotateArea(int x, int y, int width, int height, float angle) {
         }
     }
 
-    float centerX = width / 2.0f;
-    float centerY = height / 2.0f;
+    float centerX = (float)width / 2.0f;
+    float centerY = (float)height / 2.0f;
     float cosAngle = cos(-angle);
     float sinAngle = sin(-angle);
 
@@ -454,8 +508,24 @@ int main(int argc, char* argv[]) {
     initMatrix();
     initSDL();
     PEN pen = initPen();
+    PEN pen1 = initPen();
+    pen1.x = 0;
+    pen1.y = 0;
 
-    test(pen);
+    lineWrite(100, pen1);
+    pen1.x = 200;
+    pen1.y = 0;
+    pen1.angle = 270;
+    lineWrite(100, pen1);
+
+    pen1.x = 200;
+    pen1.y = 200;
+    pen1.angle = 470;
+    lineWrite(100, pen1);
+
+    fillColor((int)(WIDTH / 2 + 20), (int)(HEIGHT / 2), defineColor(COLOR_GREEN));
+
+    //test(pen);
 
 
     closeEventSDL();
