@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.26)
-project(pyDraw1 C)
+project(pyDraw C)
 
 set(CMAKE_C_STANDARD 11)
 
