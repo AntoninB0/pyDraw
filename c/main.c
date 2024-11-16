@@ -23,7 +23,7 @@
 
 #define WAIT waitKey();
 
-#define SPEED 300
+#define SPEED 0 //300
 
 typedef struct PEN {
     int size, penDown;
@@ -35,7 +35,7 @@ typedef struct POS {
     int x, y;
 } POS;
 
-typedef struct {
+typedef struct Stack{
     POS *data;
     int size;
     int capacity;
@@ -472,18 +472,42 @@ void copyPaste(int x, int y, int width, int height, int x1, int y1) {
 
 void copy(int x, int y, int width, int height){
     if (tempMatrix.matrix!=NULL){
-
+        for (int i = 0; i < tempMatrix.width; i++) {
+            free(tempMatrix.matrix[i]);
+        }
     }
 
-    tempMatrix.matrix = malloc(sizeof(SDL_Color*) * WIDTH);
+    tempMatrix.matrix = malloc(sizeof(SDL_Color*) * width);
     if (tempMatrix.matrix == NULL) exit(1);
+    tempMatrix.width = width;
 
-    for (int i = 0; i < WIDTH; i++) {
-        tempMatrix.matrix[i] = malloc(sizeof(SDL_Color) * HEIGHT);
+    for (int i = 0; i < width; i++) {
+        tempMatrix.matrix[i] = malloc(sizeof(SDL_Color) * height);
         if (tempMatrix.matrix[i] == NULL) exit(1);
     }
+    tempMatrix.height = height;
 
+    for (int i = 0; i < width; i++) {
+        for (int e = 0; e < height; e++) {
+            if (x+i<WIDTH && 0<=x+i && y+e<HEIGHT && 0<=y+e){
+                tempMatrix.matrix[i][e] = matrix[x+i][y+e];
+            } else {
+                tempMatrix.matrix[i][e] = (SDL_Color){0, 0, 0, 0};
+            }
+        }
+    }
 
+}
+
+void paste(int x, int y){
+    for (int i = 0; i < tempMatrix.width; i++) {
+        for (int e = 0; e < tempMatrix.height; e++) {
+            if (x+i<WIDTH && 0<=x+i && y+e<HEIGHT && 0<=y+e){
+                matrix[x+i][y+e] = tempMatrix.matrix[i][e];
+            }
+        }
+    }
+    renderMatrix();
 
 }
 
@@ -504,21 +528,21 @@ void cut(int x, int y, int width, int height, int x1, int y1) {
     renderMatrix();
 }
 
-void translation(int x, int y, int width, int height, int lengh, float angle){
+void translation(int x, int y, int width, int height, int length, float angle, int precision){
+    if (precision == 0) precision = 1;
+
     float angle_rad = float2Rad(angle);
     float cos_angle = cosf(angle_rad);
     float sin_angle = sinf(angle_rad);
 
+    copy(x,y,width,height);
 
 
 
-
-
-    for(int i=0;i<lengh*lengh;i++){
-        if (i!= 0) {
-            cut(x,y,width,height, x+(i-1)*cos_angle, y+(i-1)*sin_angle);
-            }
-        copyPaste(x,y,width,height, x+i*cos_angle, y+i*sin_angle);
+    for (int i = 0; i < length ; i++) {
+        if (((int)i)%precision==0) {
+            paste((int) (x + i * cos_angle), (int) (y + i * sin_angle));
+        }
     }
 }
 
@@ -553,7 +577,10 @@ void test(PEN pen){
 
     copyPaste((int)(WIDTH / 2 - 400), (int)(HEIGHT / 2), 400, 300, (int)(WIDTH / 2 + 400), (int)(HEIGHT / 2));
 
-    translation((int)(WIDTH / 2 - 200), (int)(HEIGHT / 2 - 200), 400,200,100,20);
+    translation((int)(WIDTH / 2 - 200), (int)(HEIGHT / 2 - 200), 400,200,100,20,2);
+    translation((int) (WIDTH / 2 + 200), (int) (HEIGHT / 2 + 200), 400, 200, 100, 20, 10);
+    translation((int) (WIDTH / 2 + 100), (int) (HEIGHT / 2 + 100), 400, 200, 100, 20, -5);
+
     WAIT
     clearMatrix(defineColor(COLOR_RED));
     WAIT
