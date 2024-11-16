@@ -14,7 +14,25 @@ endif ()
 include_directories(${SDL2_INCLUDE_DIR})
 link_directories(${SDL2_LIB_DIR})
 
-add_executable(${PROJECT_NAME} main.c)
+add_executable(${PROJECT_NAME} main.c
+        libs/consts.h
+        libs/structs.h
+        libs/globalVars.h
+        src/sdlRelated.c
+        libs/sdlRelated.h
+        src/globalVars.c
+        src/fill.c
+        libs/fill.h
+        src/matrixManipulation.c
+        libs/matrixManipulation.h
+        src/miscs.c
+        libs/miscs.h
+        src/pen.c
+        libs/pen.h
+        libs/pyDraw.h
+        src/renderModification.c
+        libs/renderModification.h
+)
 
 target_link_libraries(${PROJECT_NAME} SDL2main SDL2)
 
