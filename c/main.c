@@ -23,7 +23,8 @@
 
 #define WAIT waitKey();
 
-#define SPEED 300
+#define SPEED 0
+
 
 typedef struct PEN {
     int size, penDown;
