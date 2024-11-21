@@ -1,0 +1,27 @@
+func void main() {
+    int x = 0;
+    int y = 5;
+    pen p = Pen("MyPen", 0, 0, "FF0000", 5);
+
+    if(x < y) {
+        x++;
+    } elseif(x == y) {
+        x = 10;
+    } else {
+        x--;
+    }
+
+    repeat(x < 10, x < y, x++) {
+        skip;
+    }
+
+    while(y > 0) {
+        y--;
+        if(y == 2) {
+            leave;
+        }
+    }
+
+    string message = "Hello, PyDraw!";
+    bool isFinished = false;
+}

@@ -1,110 +1,94 @@
 import re
-class Pen:
-    def __init__(self, name, x, y, color="000000", thickness=3, rotation=0, speed=5):
-        self.name = name
-        self.positionX = x
-        self.positionY = y
-        self.color = color
-        self.thickness = thickness
-        self.rotation = rotation % 360
-        self.speed = speed
 
+# Tokens definition
+TOKENS = {
+    "FUNC": r"func void (\w+)\((.*)\)\s*{",
+    "VAR_DECL": r"(int|float|pen|bool|string) (\w+) = (.*);",
+    "ASSIGNMENT": r"(\w+) = (.*);",
+    "INCREMENT": r"(\w+)\+\+;",
+    "DECREMENT": r"(\w+)\-\-;",
+    "IF": r"if\((.*)\)\s*{",
+    "ELSEIF": r"elseif\((.*)\)\s*{",
+    "ELSE": r"else\s*{",
+    "REPEAT": r"repeat\((.*)\);",
+    "WHILE": r"while\((.*)\)\s*{",
+    "SKIP": r"skip;",
+    "LEAVE": r"leave;"
+}
 
-# Function to read and analyse the file
+def tokenize_line(line):
+    """Identify tokens in a line"""
+    for token_name, pattern in TOKENS.items():
+        match = re.match(pattern, line)
+        if match:
+            return token_name, match.groups()
+    return None, None
+
 def compile_pydraw_to_python(input_file, output_file):
     with open(input_file, 'r') as file:
         lines = file.readlines()
     
     python_code = []
 
-    # Reading line by line using the right separator
     for line in lines:
         line = line.strip()
         
-        # There is no line or no separtor => No code
+        # Ignore empty lines or separators
         if not line or line == ";":
             continue
-        
-        # From PyDraw to Python
 
-        #Function
-        if line.startswith("func"):
-            match = re.match(r"func void (\w+)\((.*)\)\s*{", line)
-            if match:
-                func_name = match.group(1)
-                params = match.group(2)
-                python_code.append(f"def {func_name}({params}):")
-            continue
+        # Tokenize the line
+        token_type, groups = tokenize_line(line)
 
-        # Declaration and variable type
-        if re.match(r"(int|float|pen|bool|string) \w+ = .*;", line):
-            var_line = re.sub(r";$", "", line)  # Delete separator
-            var_line = re.sub(r"int|float|pen|bool|string", "", var_line)  # Delete type declaration (no need in python)
-            python_code.append(var_line.strip())
-            continue
-
-        # Affectation
-        if "=" in line:
-            assign_line = line.replace(";", "")
-            python_code.append(assign_line)
-            continue
-
-        # Increment and decrement
-        if "++" in line:
-            var_name = line.split("++")[0].strip()
-            python_code.append(f"{var_name} += 1")
-            continue
-
-        if "--" in line:
-            var_name = line.split("--")[0].strip()
-            python_code.append(f"{var_name} -= 1")
-            continue
-
-        # Conditions
-        if line.startswith("if("):
-            condition = re.search(r"if\((.*)\)\s*{", line).group(1)
-            python_code.append(f"if {condition}:")
-            continue
-        if line.startswith("elseif("):
-            condition = re.search(r"elseif\((.*)\)\s*{", line).group(1)
-            python_code.append(f"elif {condition}:")
-            continue
-        if line.startswith("else"):
+        # Process each token type
+        if token_type == "FUNC":
+            func_name, params = groups
+            python_code.append(f"def {func_name}({params}):")
+        elif token_type == "VAR_DECL":
+            _, var_name, value = groups
+            python_code.append(f"{var_name.strip()} = {value.strip()}")
+        elif token_type == "ASSIGNMENT":
+            var_name, value = groups
+            python_code.append(f"{var_name.strip()} = {value.strip()}")
+        elif token_type == "INCREMENT":
+            var_name, = groups
+            python_code.append(f"{var_name.strip()} += 1")
+        elif token_type == "DECREMENT":
+            var_name, = groups
+            python_code.append(f"{var_name.strip()} -= 1")
+        elif token_type == "IF":
+            condition, = groups
+            python_code.append(f"if {condition.strip()}:")
+        elif token_type == "ELSEIF":
+            condition, = groups
+            python_code.append(f"elif {condition.strip()}:")
+        elif token_type == "ELSE":
             python_code.append("else:")
-            continue
-
-        # Loops
-        if line.startswith("repeat("):
-            match = re.search(r"repeat\((.*)\)", line)
-            if match:
-                repeat_params = match.group(1).split(",")
-                var, condition, increment = repeat_params
-                python_code.append(f"while {condition.strip()}:")
-                python_code.append(f"    {increment.strip()}")
-            continue
-        if line.startswith("while("):
-            condition = re.search(r"while\((.*)\)\s*{", line).group(1)
+        elif token_type == "REPEAT":
+            params, = groups
+            var, condition, increment = map(str.strip, params.split(","))
             python_code.append(f"while {condition}:")
-            continue
-
-        # Loop's Instructions
-        if line == "skip;":
+            python_code.append(f"    {increment}")
+        elif token_type == "WHILE":
+            condition, = groups
+            python_code.append(f"while {condition.strip()}:")
+        elif token_type == "SKIP":
             python_code.append("continue")
-            continue
-        if line == "leave;":
+        elif token_type == "LEAVE":
             python_code.append("break")
-            continue
+        elif "{" in line or "}" in line:
+            # Add indentation or handle end of blocks
+            pass
+        else:
+            # Unrecognized syntax
+            raise ValueError(f"Unrecognized syntax: {line}")
 
-        # Add indentation for blocks
-        if "{" in line:
-            python_code.append("    " + line.replace("{", "").strip())
-        elif "}" in line:
-            python_code.append("")  # Ligne vide pour séparer les blocs
-
-    # Typing the python code that matchs
+    # Write the Python code to the output file
     with open(output_file, 'w') as file:
         file.write("\n".join(python_code))
 
     print(f"Compilation succeeded: the Python code is saved in {output_file}")
 
-        
+
+
+compile_pydraw_to_python("test.txt", "final.txt")
