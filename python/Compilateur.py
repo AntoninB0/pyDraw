@@ -47,6 +47,7 @@ class Parser:
         token_type, token_value = self.tokens[self.current]
         if token_type == expected_type:
             self.current += 1
+            
             print(token_value)
 
             return token_value
@@ -82,7 +83,7 @@ class Parser:
             self.consume("SYMBOL")  # '('
             self.consume("SYMBOL")  # ')'
             self.consume("SYMBOL")  # ';'
-            return {"type": "pen_method", "name": pen_name, "method": method}
+            return {"type": "pen_method", "name": pen_name,  "method": method}
         elif method in ["walk", "goTo", "jumpTo"]:
             self.consume("SYMBOL")  # '('
             if method == "walk":
