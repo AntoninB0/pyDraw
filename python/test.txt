@@ -1,27 +1,32 @@
-func void main() {
-    int x = 0;
-    int y = 5;
-    pen p = Pen("MyPen", 0, 0, "FF0000", 5);
+// Function to add two integers
+func int add(int a, int b) {
+    int result = a + b;
+    return result;
+}
 
-    if(x < y) {
-        x++;
-    } elseif(x == y) {
-        x = 10;
-    } else {
-        x--;
-    }
+// Function to calculate the square of a float
+func float square(float num) {
+    return num * num;
+}
 
-    repeat(x < 10, x < y, x++) {
-        skip;
-    }
+int x = 10;
+int y = 20;
 
-    while(y > 0) {
-        y--;
-        if(y == 2) {
+
+float value = 4.5;
+//float result = square(value);
+
+//if (z > 15) {
+    repeat(x, x < 15, x++) {
+        if (x == 13) {
+            skip;
+        }
+        if (x == 14) {
             leave;
         }
+    //}
+} else {
+    while (x < 10) {
+        x++;
     }
-
-    string message = "Hello, PyDraw!";
-    bool isFinished = false;
 }
