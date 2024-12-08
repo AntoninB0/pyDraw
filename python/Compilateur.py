@@ -5,7 +5,7 @@ TOKENS = [
     #("FUNC", r"func\s+(int|float|bool|string|pen|void)\s+(\w+)\s*\(\s*((?:\s*(int|float|bool|string|pen)\s+\w+\s*,?\s*)*)\)\s*{"),
     
     ("COMMENT", r"//.*"),  # Single-line comments : take everything after .*
-    ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|skip|leave|return|cursor|down|up|walk|goTo|jumpTo|func)\b"), #\b...\b check if there is the word ...  
+    ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|skip|leave|break|return|cursor|down|up|walk|goTo|jumpTo|func)\b"), #\b...\b check if there is the word ...  
     ("OPERATOR", r"[=+\-*/><!&|]{1,2}"),  # Includes =, ==, !=, &, |, ++, -- because of the 2 in {1,2}, [...] list of element and combination with max 2 charactere
     ("SYMBOL", r"[{}();,]"),  # Specific symbols
     ("NUMBER", r"\b\d+(\.\d+)?\b"),  # Integers and floats
@@ -52,30 +52,23 @@ class Parser:
 
             return token_value
         else:
-            print("une fois")
-            print(self.tokens)
-            print(token_value)
             raise SyntaxError(f"Expected {expected_type} but got {token_type}: {token_value}")
-
 
     def parse_variable_declaration(self):
         var_type = self.consume("KEYWORD")  # Type (int, float, pen, etc.)
         name = self.consume("IDENTIFIER")  # Variable name
-        if var_type == "pen":  # Special case for pen
-            self.consume("OPERATOR")  # Assignment operator '='
-            self.consume("KEYWORD")  # 'cursor'
-            self.consume("SYMBOL")  # '('
-            x = self.consume("NUMBER")  # x position
-            self.consume("SYMBOL")  # ','
-            y = self.consume("NUMBER")  # y position
-            self.consume("SYMBOL")  # ')'
-            self.consume("SYMBOL")  # Semicolon ';'
-            return {"type": "pen_decl", "name": name, "x": x, "y": y}
+        self.consume("OPERATOR")  # Assignment operator '='
+        
+        # Gestion des appels de fonction ou d'expressions
+        if self.tokens[self.current][0] == "IDENTIFIER" and self.tokens[self.current + 1][1] == "(":
+            value = self.parse_function_call(self.consume("IDENTIFIER"))
         else:
-            self.consume("OPERATOR")  # Assignment operator '='
-            value = self.parse_expression()  # Parse the expression
-            self.consume("SYMBOL")  # Semicolon ';'
-            return {"type": "var_decl", "var_type": var_type, "name": name, "value": value}
+            value = self.parse_expression()  # Parse an expression
+
+        self.consume("SYMBOL")  # Semicolon ';'
+        
+        # Retourne un AST cohérent
+        return {"type": "var_decl", "var_type": var_type, "name": name, "value": value}
 
     def parse_pen_method(self, pen_name):
         method = self.consume("KEYWORD")  # Method name (e.g., up, down, walk, etc.)
@@ -97,16 +90,15 @@ class Parser:
                 y = self.consume("NUMBER")
                 self.consume("SYMBOL")  # ')'
                 self.consume("SYMBOL")  # ';'
-                return {"type": "pen_method", "name": pen_name, "method": method, "params": [x, y]}
-            
+                return {"type": "pen_method", "name": pen_name, "method": method, "params": [x, y]}    
             
     def parse_function_call(self, func_name):
         self.consume("SYMBOL")  # '('
         args = []
         while self.tokens[self.current][1] != ")":
             args.append(self.parse_expression())
-            if self.tokens[self.current][1] == "," :    #or self.tokens[self.current][1] == ";":
-                self.consume("SYMBOL")  # Consume ','      or ';'
+            if self.tokens[self.current][1] == ",":
+                self.consume("SYMBOL")  # Consume ','
         self.consume("SYMBOL")  # ')'
         return {"type": "function_call", "name": func_name, "args": args}
 
@@ -129,8 +121,8 @@ class Parser:
 
         body = []
         while self.tokens[self.current][1] != "}":
-            body.append(self.parse_statement())
-        
+            body.append(self.parse_statement())  # Correctly parse statements
+
         self.consume("SYMBOL")  # '}'
 
         return {
@@ -142,44 +134,148 @@ class Parser:
         }
 
     def parse_repeat(self):
+        """
+        Parse a 'repeat' loop with the syntax:
+        repeat (init_expr, condition_expr, increment_expr) { body }
+        """
         self.consume("KEYWORD")  # 'repeat'
         self.consume("SYMBOL")  # '('
+        
+        # Parse the initialization, condition, and increment
         init = self.parse_expression()
         self.consume("SYMBOL")  # ','
         condition = self.parse_expression()
         self.consume("SYMBOL")  # ','
-        increment = self.parse_expression()
+        increment = self.parse_increment()
         self.consume("SYMBOL")  # ')'
+        
+        # Parse the loop body
         self.consume("SYMBOL")  # '{'
-
         body = []
         while self.tokens[self.current][1] != "}":
             body.append(self.parse_statement())
-        
         self.consume("SYMBOL")  # '}'
 
+        # Return the 'repeat' node
         return {
             "type": "repeat",
             "init": init,
             "condition": condition,
-            "increment": increment,
+            "increment_var": increment["name"],
+            "increment_op" : increment["operation"],
             "body": body
         }
 
-
     
-    def parse_statement(self):
+    def parse_condition(self):
+        if self.consume("KEYWORD") == "if":
+            self.consume("SYMBOL")  # '('
+            condition = self.parse_expression()
+            self.consume("SYMBOL")  # ')'
+            self.consume("SYMBOL")  # '{'
+
+            body = []
+            while self.tokens[self.current][1] != "}":
+                body.append(self.parse_statement())
+
+            self.consume("SYMBOL")  # '}'
+
+            # Initial node for the 'if' statement
+            node = {
+                "type": "if",
+                "condition": condition,
+                "body": body,
+                "elseif": [],
+                "else": None,
+            }
+
+            # Handle 'elseif' block if exists
+            while self.current < len(self.tokens) and self.tokens[self.current][1] == "elseif":
+                self.consume("KEYWORD")  # 'elseif'
+                self.consume("SYMBOL")  # '('
+                elseif_condition = self.parse_expression()
+                self.consume("SYMBOL")  # ')'
+                self.consume("SYMBOL")  # '{'
+
+                elseif_body = []
+                while self.tokens[self.current][1] != "}":
+                    elseif_body.append(self.parse_statement())
+
+                self.consume("SYMBOL")  # '}'
+                node["elseif"].append({
+                    "condition": elseif_condition,
+                    "body": elseif_body
+                })
+
+            # Handle 'else' block if exists
+            if self.current < len(self.tokens) and self.tokens[self.current][1] == "else":
+                self.consume("KEYWORD")  # 'else'
+                self.consume("SYMBOL")  # '{'
+
+                else_body = []
+                while self.tokens[self.current][1] != "}":
+                    else_body.append(self.parse_statement())
+
+                self.consume("SYMBOL")  # '}'
+                node["else"] = else_body
+
+            return node
+
+    def parse_condition_methode(self):
         """
-        Parse a single statement in the code. Handles variable declarations, method calls, and return statements.
+        Parse methode like break, leave or skip
         """
         token_type, token_value = self.tokens[self.current]
 
+        if token_type == "KEYWORD":
+            methode = self.consume("KEYWORD")  # Consume the methode
+            self.consume("SYMBOL")  # Consume the ';' symbol
+            return {"type": "methode", "methode": methode}
+    
+    def parse_increment(self):
+        """
+        Parse short operations like x++ or x--.
+        """
+        name = self.consume("IDENTIFIER")  # Get the variable name (e.g., `x`)
+        operation = self.consume("OPERATOR")  # Get the operator (e.g., `++` or `--`)
+        
+        if operation not in ["++", "--"]:
+            raise SyntaxError(f"Unexpected increment operation: {operation}")
+        
+        return {"type": "short_operation", "name": name, "operation": operation}
+
+    def parse_short_operation(self):
+        """
+        Parse short operations like x++ or x--.
+        """
+        name = self.consume("IDENTIFIER")  # Get the variable name (e.g., `x`)
+        operation = self.consume("OPERATOR")  # Get the operator (e.g., `++` or `--`)
+        
+        if operation not in ["++", "--"]:
+            raise SyntaxError(f"Unexpected operation: {operation}")
+
+        # Ensure a ';' is present after the operation
+        self.consume("SYMBOL")  # Consume the `;`
+
+        return {"type": "short_operation", "name": name, "operation": operation}
+
+    def parse_statement(self):
+        """
+        Parse a single statement in the code. Handles variable declarations, method calls, 
+        return statements, loops, and now function definitions.
+        """
+        token_type, token_value = self.tokens[self.current]
+
+        # Handle function definitions
+        if token_type == "KEYWORD" and token_value == "func":
+            return self.parse_function()
+
         # Handle variable declarations like `int x = 5;`
-        if token_type == "KEYWORD" and token_value in ["int", "float", "pen"]:
+        elif token_type == "KEYWORD" and token_value in ["int", "float", "pen"]:
             return self.parse_variable_declaration()
 
-        # Handle method calls like `pen_name.move(10, 20);`
-        elif token_type == "IDENTIFIER":
+        # Handle method calls like `pen_name.walk(10);`
+        elif token_type == "IDENTIFIER" and token_value=="pen_name":#liste de tous les atribut/fonction a mettre
             pen_name = self.consume("IDENTIFIER")
             return self.parse_pen_method(pen_name)
 
@@ -189,93 +285,180 @@ class Parser:
             value = self.parse_expression()  # Parse the returned expression
             self.consume("SYMBOL")  # Consume the ';'
             return {"type": "return", "value": value}
-        
-        elif token_type == "KEYWORD" and token_value in ["repeat"]:
+
+        # Handle repeat loops
+        elif token_type == "KEYWORD" and token_value == "repeat":
             return self.parse_repeat()
 
-        elif token_type == "KEYWORD" and token_value in ["if", "else","elseif"]:
-            print('ici')
-            value = self.parse_expression()  # Parse the returned expression
-            self.consume("SYMBOL")  # Consume the ';'
-            return {"type": "return", "value": value}
+        # Handle conditons : if, else, elseif
+        elif token_type == "KEYWORD" and token_value == "if" :
+            return self.parse_condition()
         
+        # Handle leave, skip and break
+        elif token_type == "KEYWORD" and (token_value == "skip" or token_value == "leave" or token_value == "break"):
+            return self.parse_condition_methode()
 
 
-
-        elif token_type == "IDENTIFIER":  # Could be a variable or function call
-            name = self.consume("IDENTIFIER")
-            if self.tokens[self.current][1] == "(":
-                return self.parse_function_call(name)
+        # Handle short operation with ++ or --
+        elif token_type == "IDENTIFIER":
+            # Peek at the next token to check for ++ or --
+            if self.tokens[self.current + 1][1] in ["++", "--"]:
+                return self.parse_short_operation()
             else:
-                raise SyntaxError(f"Unexpected identifier usage: {name}")
-        
+                return self.parse_assignment()
+
+
 
         # If no valid statement type is found, raise an error
         else:
-            raise SyntaxError(f"Unexpected token in statement: {token_value}")
+            raise SyntaxError(f"Unexpected token in statement: {token_type} {token_value}")
+
+    def parse_assignment(self):
+        """
+        Parse an assignment statement like `a = b;`.
+        """
+        token_type, token_value = self.tokens[self.current]
+
+        if token_type == "IDENTIFIER":
+            left = token_value
+            self.consume("IDENTIFIER")  # Consume the identifier (variable)
+
+            self.consume("OPERATOR")  # Consume the '=' symbol
+
+            right = self.parse_expression()  # Parse the right-hand side expression
+
+            self.consume("SYMBOL")  # Consume the ';' symbol
+
+            return {"type": "assignment", "left": left, "right": right}
 
     def parse_expression(self):
         """
-        Parse an expression (e.g., 'a + b', '5', etc.).
+        Parse an expression, including binary operations (e.g., 'num * num').
+        """
+        left = self.parse_term()  # Parse the first operand or term
+
+        while self.current < len(self.tokens):
+            token_type, token_value = self.tokens[self.current]
+
+            # Check for an operator
+            if token_type == "OPERATOR":
+                operator = self.consume("OPERATOR")
+                right = self.parse_term()
+
+                left = f"{left} {operator} {right}"  # Combine into a valid expression
+            else:
+                break
+
+        return left
+
+    def parse_term(self):
+        """
+        Parse a single term, such as a variable, number, or parenthesized expression.
         """
         token_type, token_value = self.tokens[self.current]
-        
-        # Basic example: Parse an identifier or number
-        if token_type in ["IDENTIFIER", "NUMBER"]:
-            self.current += 1
-            left = token_value
 
-            # Check for an operator (e.g., '+', '-', etc.)
-            if self.current < len(self.tokens):
-                token_type, token_value = self.tokens[self.current]
-                if token_type == "OPERATOR":
-                    self.current += 1
-                    operator = token_value
-                    right = self.parse_expression()  # Recursively parse the right-hand side
-                    return f"{left} {operator} {right}"
-            return left
+        if token_type == "IDENTIFIER" or token_type == "NUMBER":
+            self.current += 1
+            return token_value
+        elif token_value == "(":  # Handle parenthesized expressions
+            self.consume("SYMBOL")  # Consume '('
+            expr = self.parse_expression()
+            self.consume("SYMBOL")  # Consume ')'
+            return f"({expr})"
         else:
-            raise SyntaxError(f"Unexpected token in expression: {token_value}")
+            raise SyntaxError(f"Unexpected token in term: {token_value}")
 
 
     def parse(self):
         ast = []
         while self.current < len(self.tokens):
-            token_type, token_value = self.tokens[self.current]
-            
-            if token_type == "KEYWORD" and token_value == "func":
+            print(f"Parsing statement starting at token {self.current}")  # Debug log
+            try:
+                statement = self.parse_statement()
+                ast.append(statement)
+                #print(ast)
                 
-                ast.append(self.parse_function())
-                print("iciiiiii")
-            else:
-                raise SyntaxError(f"Unexpected token: {self.tokens[self.current]}")
+            except SyntaxError as e:
+                
+                raise SyntaxError(f"Error parsing statement at token {self.current}: {e}")
+
+        #print("AST generated:", ast)  # Debug log for the final AST
         return ast
+
+
+
+
+
 
 # Code generation for C
 def generate_c_code(ast):
     """
     Generate C code from the given Abstract Syntax Tree (AST).
     """
-    
     c_code = []
+
     for node in ast:
         if node["type"] == "var_decl":
-            c_code.append(f"{node['var_type']} {node['name']} = {node['value']};")
+            value = generate_c_code([node["value"]]) if isinstance(node["value"], dict) else node["value"]
+            c_code.append(f"{node['var_type']} {node['name']} = {value};")
         elif node["type"] == "pen_decl":
             c_code.append(f"Pen {node['name']} = createPen({node['x']}, {node['y']});")
         elif node["type"] == "pen_method":
-            params = ", ".join(node.get("params", []))
+            params = ", ".join(map(str, node.get("params", [])))
             c_code.append(f"{node['name']}.{node['method']}({params});")
+        elif node["type"] == "function_call":
+            args = ", ".join(node["args"])
+            c_code.append(f"{node['name']}({args});")
         elif node["type"] == "function":
             params = ", ".join([f"{ptype} {pname}" for ptype, pname in node.get("params", [])])
-            body = "\n".join([f"    {line}" for line in generate_c_code(node.get("body", [])).split("\n")])
+            body = "".join([f"{line}" for line in generate_c_code(node.get("body", [])).split("\n")])
             c_code.append(f"{node['return_type']} {node['name']}({params}) {{\n{body}\n}}")
         elif node["type"] == "return":
             c_code.append(f"return {node['value']};")
+            # Handle assignments
+        elif node["type"] == "assignment":
+            left = node["left"]
+            right = node["right"]
+            c_code.append(f"{left} = {right};")
+        #handle methode
+        elif node["type"] == "methode":
+            methode = node["methode"]
+            c_code.append(f"{methode};")
+        # handle short operator
+        elif node["type"] == "short_operation":
+            operation = node["operation"]
+            name = node["name"]
+            c_code.append(f"{name} {operation};")
+        # Handle repeat
+        elif node["type"] == "repeat":
+            init = node["init"]
+            condition = node["condition"]
+            increment_var = node["increment_var"]
+            increment_op = node["increment_op"]
+            body = "".join([f"{line}" for line in generate_c_code(node["body"])])
+            c_code.append(f"for ({init},{condition}, {increment_var} {increment_op}) {{\n{body}\n}}")
+        # Handle conditions (if, else, elseif)
+        elif node["type"] == "if":
+            condition = node["condition"]
+            body = "".join([f"{line}" for line in generate_c_code(node["body"])])
+            c_code.append(f"if ({condition}) {{\n{body}\n}}")
+            
+            # Handle else if
+            if node.get("elseif"):
+                for elif_block in node["elseif"]:
+                    elif_condition = elif_block["condition"]
+                    elif_body = "".join([f"{line}" for line in generate_c_code(elif_block["body"])])
+                    c_code.append(f"else if ({elif_condition}) {{\n{elif_body}\n}}")
+            
+            # Handle else block
+            if node.get("else"):
+                else_body = "".join([f"{line}" for line in generate_c_code(node["else"])])
+                c_code.append(f"else {{\n{else_body}\n}}")
         else:
             raise ValueError(f"Unknown AST node type: {node['type']}")
 
     return "\n".join(c_code)
+
 
 # Main function to run the compiler
 def main(input_file, output_file):
@@ -306,3 +489,7 @@ def write_file(filename, content):
 
 if __name__ == "__main__":
     main("test.txt", "output.c")
+
+
+
+
