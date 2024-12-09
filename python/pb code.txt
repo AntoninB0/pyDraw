@@ -1,0 +1,13 @@
+result = square(value);
+non fonctionnel
+
+
+
+
+verifie qu'il y a un token apres sinon erreur
+
+verifier type d'un identifier avant de l'utiliser
+
+
+
+
