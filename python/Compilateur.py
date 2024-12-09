@@ -7,13 +7,15 @@ TOKENS = [
     ("COMMENT", r"//.*"),  # Single-line comments : take everything after .*
     ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|skip|leave|break|return|cursor|down|up|walk|goTo|jumpTo|func)\b"), #\b...\b check if there is the word ...  
     ("OPERATOR", r"[=+\-*/><!&|]{1,2}"),  # Includes =, ==, !=, &, |, ++, -- because of the 2 in {1,2}, [...] list of element and combination with max 2 charactere
-    ("SYMBOL", r"[{}();,]"),  # Specific symbols
+    ("SYMBOL", r"[{}();,.]"),  # Specific symbols
     ("NUMBER", r"\b\d+(\.\d+)?\b"),  # Integers and floats
     ("BOOL", r"\b(true|false)\b"),  # Boolean values
     ("STRING", r"\".*?\""),  # String literals
+    ("PEN_ATTRIBUTE",r"\b(color|thickness|positionX|positionY|rotation|speed)\b"),
     ("IDENTIFIER", r"\b[a-zA-Z_][a-zA-Z0-9_]*\b"),  # Variable/function names
     ("WHITESPACE", r"[ \t\n]+"),  # Whitespace (to be ignored)
-    ("UNKNOWN", r"."),  # Catch-all for unexpected characters
+    
+    #("UNKNOWN", r"."),  # Catch-all for unexpected characters
 ]
 
 # Function for lexical analysis, read all the code and transform it into tokens
@@ -69,8 +71,43 @@ class Parser:
         
         # Retourne un AST cohérent
         return {"type": "var_decl", "var_type": var_type, "name": name, "value": value}
+    
+    def parse_pen_declaration(self):
+        print("ici")
+        self.consume("KEYWORD")  # Consume the type pen
+        print("2")
+        name = self.consume("IDENTIFIER")  # name of the pen
+        print("3")
+        self.consume("OPERATOR")  # Consume "="
+        self.consume("KEYWORD")  # Consume "cursor"
+        self.consume("SYMBOL")  # Consume "("
+        x = self.consume("NUMBER")  # Position X
+        self.consume("SYMBOL")  # Consume ","
+        y = self.consume("NUMBER")  # Position Y
+        self.consume("SYMBOL")  # Consume ")"
+        self.consume("SYMBOL")  # Consume ";"
+        
+        return {"type": "pen_decl", "name": name, "x": x, "y": y}
 
     def parse_pen_method(self, pen_name):
+        self.consume("SYMBOL")  # Consomme le "."
+        method = self.consume("KEYWORD")  # Nom de la méthode
+        self.consume("SYMBOL")  # Consomme "("
+        
+        params = []
+        if self.tokens[self.current][1] != ")":  # Si la méthode a des paramètres
+            params.append(self.parse_expression())  # Analyse le premier paramètre
+            while self.tokens[self.current][1] == ",":
+                self.consume("SYMBOL")  # Consomme ","
+                params.append(self.parse_expression())
+        
+        self.consume("SYMBOL")  # Consomme ")"
+
+        self.consume("SYMBOL")
+        
+        return {"type": "method_call", "name": pen_name, "method": method, "params": params}
+
+    """def parse_pen_method(self, pen_name):
         method = self.consume("KEYWORD")  # Method name (e.g., up, down, walk, etc.)
         if method in ["up", "down"]:
             self.consume("SYMBOL")  # '('
@@ -90,8 +127,22 @@ class Parser:
                 y = self.consume("NUMBER")
                 self.consume("SYMBOL")  # ')'
                 self.consume("SYMBOL")  # ';'
-                return {"type": "pen_method", "name": pen_name, "method": method, "params": [x, y]}    
+                return {"type": "pen_method", "name": pen_name, "method": method, "params": [x, y]}    """
             
+    def parse_pen_attribute(self, pen_name):
+        self.consume("SYMBOL")  # Consume the "."
+        attribute = self.consume("PEN_ATTRIBUTE")  # Attribute's name
+        self.consume("OPERATOR")
+        if attribute in ["rotation","speed","positionY", "positionX","thickness"] :
+            value = self.consume("NUMBER")
+        elif attribute == "color" :
+            value = self.consume("STRING")
+        else :
+            print("erreur, not an attribute")
+
+        self.consume("SYMBOL")
+        return {"type": "pen_attribute", "name": pen_name, "attribute": attribute,"value":value}
+
     def parse_function_call(self, func_name):
         self.consume("SYMBOL")  # '('
         args = []
@@ -166,7 +217,6 @@ class Parser:
             "body": body
         }
 
-    
     def parse_condition(self):
         if self.consume("KEYWORD") == "if":
             self.consume("SYMBOL")  # '('
@@ -259,65 +309,12 @@ class Parser:
 
         return {"type": "short_operation", "name": name, "operation": operation}
 
-    def parse_statement(self):
-        """
-        Parse a single statement in the code. Handles variable declarations, method calls, 
-        return statements, loops, and now function definitions.
-        """
-        token_type, token_value = self.tokens[self.current]
-
-        # Handle function definitions
-        if token_type == "KEYWORD" and token_value == "func":
-            return self.parse_function()
-
-        # Handle variable declarations like `int x = 5;`
-        elif token_type == "KEYWORD" and token_value in ["int", "float", "pen"]:
-            return self.parse_variable_declaration()
-
-        # Handle method calls like `pen_name.walk(10);`
-        elif token_type == "IDENTIFIER" and token_value=="pen_name":#liste de tous les atribut/fonction a mettre
-            pen_name = self.consume("IDENTIFIER")
-            return self.parse_pen_method(pen_name)
-
-        # Handle return statements like `return x;`
-        elif token_type == "KEYWORD" and token_value == "return":
-            self.consume("KEYWORD")  # Consume 'return'
-            value = self.parse_expression()  # Parse the returned expression
-            self.consume("SYMBOL")  # Consume the ';'
-            return {"type": "return", "value": value}
-
-        # Handle repeat loops
-        elif token_type == "KEYWORD" and token_value == "repeat":
-            return self.parse_repeat()
-
-        # Handle conditons : if, else, elseif
-        elif token_type == "KEYWORD" and token_value == "if" :
-            return self.parse_condition()
-        
-        # Handle leave, skip and break
-        elif token_type == "KEYWORD" and (token_value == "skip" or token_value == "leave" or token_value == "break"):
-            return self.parse_condition_methode()
-
-
-        # Handle short operation with ++ or --
-        elif token_type == "IDENTIFIER":
-            # Peek at the next token to check for ++ or --
-            if self.tokens[self.current + 1][1] in ["++", "--"]:
-                return self.parse_short_operation()
-            else:
-                return self.parse_assignment()
-
-
-
-        # If no valid statement type is found, raise an error
-        else:
-            raise SyntaxError(f"Unexpected token in statement: {token_type} {token_value}")
-
     def parse_assignment(self):
         """
         Parse an assignment statement like `a = b;`.
         """
         token_type, token_value = self.tokens[self.current]
+        next_token_type, next_token_value = self.tokens[self.current + 1]
 
         if token_type == "IDENTIFIER":
             left = token_value
@@ -367,8 +364,66 @@ class Parser:
             return f"({expr})"
         else:
             raise SyntaxError(f"Unexpected token in term: {token_value}")
+    
+    def parse_statement(self):
+        """
+        Parse a single statement in the code. Handles variable declarations, method calls, 
+        return statements, loops, and now function definitions.
+        """
+        token_type, token_value = self.tokens[self.current]
+        next_token_type, next_token_value = self.tokens[self.current + 1]
+
+        # Handle function definitions
+        if token_type == "KEYWORD" and token_value == "func":
+            return self.parse_function()
+        # Handle pen declarations
+        elif token_type == "KEYWORD" and token_value == "pen":
+            return self.parse_pen_declaration()
+
+        # Handle pen methods (e.g., pen1.walk(50);)
+        elif token_type == "IDENTIFIER" and next_token_type == "SYMBOL" and next_token_value == ".":  # Check for `pen1.<something>`
+            pen_name = self.consume("IDENTIFIER")
+            next_next_token_type, next_next_token_value = self.tokens[self.current + 1]
+            if next_next_token_type == "PEN_ATTRIBUTE" :
+                return self.parse_pen_attribute(pen_name)
+            else :
+                return self.parse_pen_method(pen_name)
+        
+
+        # Handle variable declarations like `int x = 5;`
+        elif token_type == "KEYWORD" and token_value in ["int", "float", "bool", "string"]:
+            return self.parse_variable_declaration()
+
+        # Handle return statements like `return x;`
+        elif token_type == "KEYWORD" and token_value == "return":
+            self.consume("KEYWORD")  # Consume 'return'
+            value = self.parse_expression()  # Parse the returned expression
+            self.consume("SYMBOL")  # Consume the ';'
+            return {"type": "return", "value": value}
+
+        # Handle repeat loops
+        elif token_type == "KEYWORD" and token_value == "repeat":
+            return self.parse_repeat()
+
+        # Handle conditons : if, else, elseif
+        elif token_type == "KEYWORD" and token_value == "if" :
+            return self.parse_condition()
+        
+        # Handle leave, skip and break
+        elif token_type == "KEYWORD" and (token_value == "skip" or token_value == "leave" or token_value == "break"):
+            return self.parse_condition_methode()
 
 
+        # Handle short operation with ++ or --
+        elif token_type == "IDENTIFIER":
+            # Peek at the next token to check for ++ or --
+            if self.tokens[self.current + 1][1] in ["++", "--"]:
+                return self.parse_short_operation()
+            else:
+                return self.parse_assignment()
+        # If no valid statement type is found, raise an error
+        else:
+            raise SyntaxError(f"Unexpected token in statement: {token_type} {token_value}")
     def parse(self):
         ast = []
         while self.current < len(self.tokens):
@@ -454,8 +509,20 @@ def generate_c_code(ast):
             if node.get("else"):
                 else_body = "".join([f"{line}" for line in generate_c_code(node["else"])])
                 c_code.append(f"else {{\n{else_body}\n}}")
+        #Handle pen's creation
+        elif node["type"] == "pen_decl":
+            c_code.append(f"Pen {node['name']} = createPen({node['x']}, {node['y']});")
+        # Handle pen's attribute
+        elif node["type"] == "pen_attribute":
+            c_code.append(f"{node['name']}.{node['attribute']} = {node['value']};")
+        # Handle pen's method
+        elif node["type"] == "method_call":
+            params = ", ".join(map(str, node["params"]))  # Liste des paramètres
+            c_code.append(f"{node['name']}.{node['method']}({params});")
+
+
         else:
-            raise ValueError(f"Unknown AST node type: {node['type']}")
+            raise ValueError(f"Unknown AST node type: {node['type']};")
 
     return "\n".join(c_code)
 
