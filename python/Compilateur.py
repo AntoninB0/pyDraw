@@ -5,7 +5,7 @@ TOKENS = [
     #("FUNC", r"func\s+(int|float|bool|string|pen|void)\s+(\w+)\s*\(\s*((?:\s*(int|float|bool|string|pen)\s+\w+\s*,?\s*)*)\)\s*{"),
     
     ("COMMENT", r"//.*"),  # Single-line comments : take everything after .*
-    ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|skip|leave|break|return|cursor|down|up|walk|goTo|jumpTo|func)\b"), #\b...\b check if there is the word ...  
+    ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|skip|leave|break|return|cursor|down|up|walk|goTo|jumpTo|rectangle|circle|triangleIso|rotateCW|rotateCCW|func)\b"), #\b...\b check if there is the word ...  
     ("OPERATOR", r"[=+\-*/><!&|]{1,2}"),  # Includes =, ==, !=, &, |, ++, -- because of the 2 in {1,2}, [...] list of element and combination with max 2 charactere
     ("SYMBOL", r"[{}();,.]"),  # Specific symbols
     ("NUMBER", r"\b\d+(\.\d+)?\b"),  # Integers and floats
@@ -340,8 +340,14 @@ class Parser:
             # Check for an operator
             if token_type == "OPERATOR":
                 operator = self.consume("OPERATOR")
+                
                 right = self.parse_term()
 
+                if operator == "&" :
+                    operator = " and "
+                elif operator == "|" :
+                    operator = " or "
+                    
                 left = f"{left} {operator} {right}"  # Combine into a valid expression
             else:
                 break
@@ -424,6 +430,7 @@ class Parser:
         # If no valid statement type is found, raise an error
         else:
             raise SyntaxError(f"Unexpected token in statement: {token_type} {token_value}")
+    
     def parse(self):
         ast = []
         while self.current < len(self.tokens):

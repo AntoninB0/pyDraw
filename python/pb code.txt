@@ -11,3 +11,4 @@ verifier type d'un identifier avant de l'utiliser
 
 
 
+operateur & et | à verifier si ca marche
