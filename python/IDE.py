@@ -1,205 +1,348 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox, Text
-from tkinter import ttk
-import subprocess
-import platform
+from tkinter import filedialog, messagebox, ttk
+import platform  # Pour détecter le système d'exploitation
 
-# Fonction pour exécuter le programme C (dessin progressif d'une ligne)
-def execute_c_program():
-    # Le chemin du fichier C
-    c_file_path = filedialog.askopenfilename(defaultextension=".c", 
-                                             filetypes=[("C Files", "*.c"), ("All Files", "*.*")])
-    if not c_file_path:
-        return
-    
-    # Nom de l'exécutable à générer
-    output_file = "draw_line"
-    if platform.system() == "Windows":
-        output_file += ".exe"  # Extension pour Windows
-    
-    # Commande de compilation
-    compile_command = []
-    if platform.system() == "Linux":
-        compile_command = ["gcc", c_file_path, "-o", output_file, "-lSDL2"]
-    elif platform.system() == "Windows":
-        compile_command = ["gcc", c_file_path, "-o", output_file, "-lmingw32", "-lSDL2main", "-lSDL2"]
-    
-    # Compilation
-    try:
-        subprocess.run(compile_command, check=True)
-        messagebox.showinfo("Succès", f"Compilation réussie ! Exécutable : {output_file}")
-    except subprocess.CalledProcessError as e:
-        messagebox.showerror("Erreur", f"Erreur lors de la compilation : {e}")
-        return
+class TextEditor:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Éditeur de Texte")
+        
+        # Suivi de l'état du thème
+        self.is_dark_theme = True
+        
+        self.menu = tk.Menu(root)
+        root.config(menu=self.menu)
+        self.file_menu = tk.Menu(self.menu, tearoff=0)
+        self.menu.add_cascade(label="Fichier", menu=self.file_menu)
+        self.file_menu.add_command(label="Nouveau", command=self.new_file)
+        self.file_menu.add_command(label="Ouvrir", command=self.open_file)
+        self.file_menu.add_command(label="Enregistrer", command=self.save_file)
+        self.file_menu.add_command(label="Enregistrer sous", command=self.save_file_as)
+        self.file_menu.add_command(label="Changer de thème", command=self.toggle_theme)  # Changer de thème
+        self.file_menu.add_separator()
+        
+        # Barre de boutons pour le debug
+        self.toolbar = tk.Frame(root)
+        self.toolbar.pack(side='top', fill='x')
+        self.debug_button = tk.Button(self.toolbar, text="Debug", command=self.debug)
+        self.debug_button.pack(side='left')
 
-    # Exécution du programme C compilé
-    try:
+        # Créer un canvas pour dessiner un triangle vert
+        self.triangle_canvas = tk.Canvas(self.toolbar, width=30, height=30)
+        self.triangle_canvas.pack(side='left')
+
+        # Dessiner le triangle vert
+        self.triangle_canvas.create_polygon(5, 25, 25, 25, 15, 5, fill='green', outline='black')
+       
+        # Lier l'action de clic sur le triangle à extra_action
+        self.triangle_canvas.bind("<Button-1>", lambda event: self.run_action())
+
+        # Ajouter le bouton Fermer
+        self.close_button = tk.Button(self.toolbar, text="Fermer l'onglet", command=self.close_tab)
+        self.close_button.pack(side='right')
+               
+        self.clear_button = tk.Button(self.toolbar, text="Clear", command=self.clear_terminal)
+        self.clear_button.pack(side='right')
+
+        # PanedWindow pour gérer le redimensionnement
+        self.paned_window = tk.PanedWindow(root, orient=tk.VERTICAL)
+        self.paned_window.pack(fill='both', expand=True)
+
+        # Frame pour l'éditeur de texte
+        self.text_frame = tk.Frame(self.paned_window)
+        self.notebook = ttk.Notebook(self.text_frame)
+        self.notebook.pack(fill='both', expand=True)
+        self.paned_window.add(self.text_frame, minsize=100)  # Taille minimale
+        self.current_file = None
+        self.open_files = []
+        self.line_states = {}
+        self.line_underlignes = {}
+        
+        # Frame pour le terminal
+        self.terminal_frame = tk.Frame(self.paned_window)
+        self.terminal = tk.Text(self.terminal_frame, height=5, state='normal', bg='#252539', fg='white')
+        self.terminal.pack(fill='both', expand=True)
+        
+        # Ajoutez le terminal_frame au paned_window
+        self.paned_window.add(self.terminal_frame, minsize=50)
+        self.open_default_file()
+
+    def close_tab(self):
+        # Récupérer l'index de l'onglet actif
+        current_tab_index = self.notebook.index(self.notebook.select())
+        current_tab = self.open_files[current_tab_index]
+        # Vérifier si l'onglet est fermable
+        if current_tab['closable']:
+            # Supprimer l'onglet du Notebook et de la liste
+            self.notebook.forget(current_tab['frame'])
+            self.open_files.pop(current_tab_index)
+        else:
+            messagebox.showwarning("Action interdite", "Cet onglet ne peut pas être fermé.")
+    def save_file(self):
+        current_tab = self.notebook.index(self.notebook.select())
+        if self.open_files[current_tab]['file_path']:
+            with open(self.open_files[current_tab]['file_path'], 'w') as file:
+                file.write(self.open_files[current_tab]['text_widget'].get(1.0, tk.END))
+        else:
+            self.save_file_as()
+    def save_file_as(self):
+        # Obtenir l'index de l'onglet actuel
+        current_tab_index = self.notebook.index(self.notebook.select())
+        current_tab = self.open_files[current_tab_index]
+        # Demander à l'utilisateur de choisir où sauvegarder le fichier
+        file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt"), ("All files", "*.*")])
+        if file_path:
+            # Sauvegarder le contenu dans le nouveau fichier
+            with open(file_path, 'w') as file:
+                file.write(current_tab['text_widget'].get(1.0, tk.END))
+            # Fermer l'onglet actuel
+            self.close_tab()
+
+    def toggle_theme(self):
+        """Alterner entre thème clair et sombre."""
+        if self.is_dark_theme:
+            # Passer au thème clair
+            self.root.configure(bg="white")
+            self.terminal.configure(bg="white", fg="black")
+            for tab in self.open_files:
+                tab['text_widget'].configure(bg="white", fg="black")
+            self.is_dark_theme = False
+        else:
+            # Passer au thème sombre
+            self.root.configure(bg='#252539')
+            self.terminal.configure(bg='#252539', fg="white")
+            for tab in self.open_files:
+                tab['text_widget'].configure(bg='#252539', fg="white")
+            self.is_dark_theme = True
+
+    def open_default_file(self):
+        file_path = "doc.txt"
+        text_frame = tk.Frame(self.notebook)
+        text_widget = tk.Text(text_frame, wrap='word', state='disabled', bg='#252539', fg='white')  # Couleurs du thème
+        text_widget.pack(side='right', fill='both', expand=True)
+        line_numbers = tk.Canvas(text_frame, width=50)
+        line_numbers.pack(side='left', fill='y')
+        text_widget.bind('<KeyRelease>', lambda event: self.update_line_numbers(text_widget, line_numbers))
+        text_widget.bind('<Configure>', lambda event: self.update_line_numbers(text_widget, line_numbers))
+        line_numbers.bind('<Button-1>', lambda event: self.on_line_number_click(text_widget, line_numbers, event, None))
+        text_widget.bind('<MouseWheel>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
+        text_widget.bind('<Button-4>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
+        text_widget.bind('<Button-5>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
+        line_numbers.bind('<MouseWheel>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
+        try:
+            with open(file_path, 'r') as file:
+                text_widget.config(state='normal')
+                text_widget.insert(tk.END, file.read())
+                text_widget.config(state='disabled')
+                # Forcer la mise à jour des numéros de ligne après le chargement du fichier
+                self.update_line_numbers(text_widget, line_numbers)
+        except FileNotFoundError:
+            messagebox.showerror("Erreur", f"Le fichier {file_path} n'a pas été trouvé.")
+        self.notebook.add(text_frame, text=file_path)
+        self.open_files.append({'text_widget': text_widget, 'line_numbers': line_numbers, 'file_path': file_path, 'frame': text_frame, 'closable': False})
+        # Initialiser l'état des lignes pour ce fichier
+        self.line_states[file_path] = {}
+        self.line_underlignes[file_path] = {}
+        
+    def open_file(self, file_path='None'):
+            # Si file_path n'est pas spécifié, ouvrir la boîte de dialogue pour sélectionner un fichier
+            if file_path == 'None':
+                file_paths = filedialog.askopenfilenames(defaultextension=".txt", filetypes=[("Text files", "*.txt"), ("All files", "*.*")])
+            if not file_paths:
+                return  # Si aucun fichier n'est sélectionné, quitter la fonction
+            # Initialiser l'état des lignes pour ce fichier
+            self.line_states[file_path] = {}
+            self.line_underlignes[file_path] = {}
+            # Créer un nouveau cadre pour l'onglet
+            text_frame = tk.Frame(self.notebook)
+            text_widget = tk.Text(text_frame, wrap='word', bg='#252539', fg='white')  # Couleurs du thème
+            text_widget.pack(side='right', fill='both', expand=True)
+            # Canvas pour les numéros de ligne
+            line_numbers = tk.Canvas(text_frame, width=50)
+            line_numbers.pack(side='left', fill='y')
+            # Liens d'événements pour la mise à jour des numéros de ligne
+            text_widget.bind('<KeyRelease>', lambda event: self.update_line_numbers(text_widget, line_numbers))
+            text_widget.bind('<Configure>', lambda event: self.update_line_numbers(text_widget, line_numbers))
+            line_numbers.bind('<Button-1>', lambda event: self.on_line_number_click(text_widget, line_numbers, event, None))
+            text_widget.bind('<MouseWheel>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
+            line_numbers.bind('<MouseWheel>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
+            # Ouvrir le fichier et insérer son contenu dans le Text widget
+            with open(file_path, 'r') as file:
+                text_widget.insert(tk.END, file.read())
+                text_widget.insert(tk.END, "\n")  # Ajoute un retour à la ligne
+            # Mettre à jour les numéros de ligne immédiatement après l'ouverture du fichier
+            self.update_line_numbers(text_widget, line_numbers)
+            # Ajouter l'onglet au notebook
+            self.notebook.add(text_frame, text=file_path)
+
+    def new_file(self):
+        # Générer un nom temporaire unique pour le fichier
+        new_file_index = len(self.open_files) + 1
+        new_file_name = f"Nouveau {new_file_index}"
+               
+        # Créer un nouveau cadre pour l'onglet
+        text_frame = tk.Frame(self.notebook)
+        text_widget = tk.Text(text_frame, wrap='word', bg='#252539', fg='white')  # Couleurs du thème
+        text_widget.pack(side='right', fill='both', expand=True)
+
+        # Canvas pour les numéros de ligne
+        line_numbers = tk.Canvas(text_frame, width=50)
+        line_numbers.pack(side='left', fill='y')
+        text_widget.bind('<KeyRelease>', lambda event: self.update_line_numbers(text_widget, line_numbers))
+        text_widget.bind('<Configure>', lambda event: self.update_line_numbers(text_widget, line_numbers))
+        line_numbers.bind('<Button-1>', lambda event: self.on_line_number_click(text_widget, line_numbers, event, None))
+        text_widget.bind('<MouseWheel>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
+        text_widget.bind('<Button-4>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
+        text_widget.bind('<Button-5>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
+        line_numbers.bind('<MouseWheel>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
+        # Ajouter l'onglet au notebook
+        self.notebook.add(text_frame, text=new_file_name)
+        self.open_files.append({'text_widget': text_widget, 'line_numbers': line_numbers, 'file_path': None, 'frame': text_frame, 'closable': True})
+        # Initialiser l'état des lignes pour ce fichier
+        self.line_states[new_file_name] = {}
+        self.line_underlignes[new_file_name] = {}
+        # Forcer la mise à jour des numéros de ligne dans le nouvel onglet
+        self.update_line_numbers(text_widget, line_numbers)
+
+    def open_file(self,file_path = None):
+        if file_path == None:
+            file_paths = filedialog.askopenfilenames(defaultextension=".txt", filetypes=[("Text files", "*.txt"), ("All files", "*.*")])
+        print(file_path)
+        if file_paths:
+            for file_path in file_paths:
+                # Initialiser l'état des lignes pour ce fichier
+                self.line_states[file_path] = {}
+                self.line_underlignes[file_path] = {}
+                text_frame = tk.Frame(self.notebook)
+                text_widget = tk.Text(text_frame, wrap='word', bg='#252539', fg='white')  # Couleurs du thème
+                text_widget.pack(side='right', fill='both', expand=True)
+                line_numbers = tk.Canvas(text_frame, width=50)
+                line_numbers.pack(side='left', fill='y')
+                text_widget.bind('<KeyRelease>', lambda event: self.update_line_numbers(text_widget, line_numbers))
+                text_widget.bind('<Configure>', lambda event: self.update_line_numbers(text_widget, line_numbers))
+                line_numbers.bind('<Button-1>', lambda event: self.on_line_number_click(text_widget, line_numbers, event, None))
+                text_widget.bind('<MouseWheel>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
+                text_widget.bind('<Button-4>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
+                text_widget.bind('<Button-5>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
+                line_numbers.bind('<MouseWheel>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
+                with open(file_path, 'r') as file:
+                    text_widget.insert(tk.END, file.read())
+                    text_widget.insert(tk.END, "\n")  # Ajoute un retour à la ligne
+                # Mettre à jour les numéros de ligne immédiatement après l'ouverture du fichier
+                self.update_line_numbers(text_widget, line_numbers)
+                self.notebook.add(text_frame, text=file_path)
+                self.open_files.append({'text_widget': text_widget, 'line_numbers': line_numbers, 'file_path': file_path, 'frame': text_frame, 'closable': True})
+    def update_line_numbers(self, text_widget, line_numbers):
+        # Récupérer l'index de l'onglet sélectionné
+        selected_tab = self.notebook.select()
+        if not selected_tab:
+            return
+        current_tab_index = self.notebook.index(selected_tab)
+        file_path = self.open_files[current_tab_index]['file_path'] or f"Tab_{current_tab_index}"
+        if file_path not in self.line_states:
+            self.line_states[file_path] = {}
+        # Supprimer les anciens numéros de ligne
+        line_numbers.delete('all')
+        # Mise à jour des numéros avec gestion des états
+        i = text_widget.index("@0,0")
+        while True:
+            dline = text_widget.dlineinfo(i)
+            if dline is None:
+                break
+            y = dline[1]
+            line_num = str(i).split(".")[0]
+            # Déterminer la couleur en fonction de l'état
+            state = self.line_states[file_path].get(line_num, False)
+            color = "green" if state else "black"
+            # Ajouter le texte du numéro de ligne
+            line_numbers.create_text(2, y, anchor="nw", text=line_num, fill=color, font=("Helvetica", 10))
+            i = text_widget.index(f"{i}+1line")
+            
+    def update_underlignes(self, text_widget,file_path):
+        # Récupérer l'index de l'onglet sélectionné
+        selected_tab = self.notebook.select()
+        if not selected_tab:
+            return
+        current_tab_index = self.notebook.index(selected_tab)
+        file_path = self.open_files[current_tab_index]['file_path'] or f"Tab_{current_tab_index}"
+        # Effacer toutes les balises existantes pour éviter les duplications
+        text_widget.tag_remove("underline", "1.0", "end")
+        # Ajouter les soulignements aux lignes spécifiées
+        for line_num, underline in self.line_underlignes[file_path].items():
+            if underline:
+                text_widget.tag_add("underline", f"{line_num}.0", f"{line_num}.end")
+        # Configurer la balise de soulignement
+        text_widget.tag_configure("underline", underline=True
+                                  
+    def on_line_number_click(self, text_widget, line_numbers, event, file_path):
+        # Identifier l'onglet actif
+        current_tab_index = self.notebook.index(self.notebook.select())
+        file_path = file_path or self.open_files[current_tab_index]['file_path'] or f"Tab_{current_tab_index}"
+        # Identifier la ligne cliquée
+        i = text_widget.index("@0,0")
+        while True:
+            dline = text_widget.dlineinfo(i)
+            if dline is None:
+                break
+            y = dline[1]
+            if y <= event.y <= y + dline[3]:
+                line_num = str(i).split(".")[0]
+                current_state = self.line_states[file_path].get(line_num, False)
+                self.line_states[file_path][line_num] = not current_state
+                self.update_line_numbers(text_widget, line_numbers)
+                break
+            i = text_widget.index(f"{i}+1line")
+    def on_mouse_wheel(self, event, text_widget, line_numbers):
         if platform.system() == "Linux":
-            subprocess.Popen(["./" + output_file])
-        elif platform.system() == "Windows":
-            subprocess.Popen([output_file])
-    except subprocess.CalledProcessError as e:
-        messagebox.showerror("Erreur", f"Erreur lors de l'exécution : {e}")
+            # Gestion spécifique pour Linux
+            if event.num == 4:  # Molette haut
+                text_widget.yview_scroll(-1, 'units')
+            elif event.num == 5:  # Molette bas
+                text_widget.yview_scroll(1, 'units')
+        else:
+            # Pour Windows et autres plateformes
+            text_widget.yview_scroll(int(-1 * (event.delta / 120)), 'units')
+           
+        # Synchroniser les numéros de ligne
+        line_numbers.yview_moveto(text_widget.yview()[0])
+        self.update_line_numbers(text_widget, line_numbers)
 
-# Fonction pour créer un fichier vide
-def create_file():
-    file_path = filedialog.asksaveasfilename(defaultextension=".txt", 
-                                             filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
-    if file_path:
-        with open(file_path, 'w') as new_file:
-            new_file.write('')  # Créer un fichier vide
-        messagebox.showinfo("Succès", f"Le fichier a été créé: {file_path}")
-# Fonction pour ouvrir et éditer un fichier existant (y compris les fichiers .c)
-def open_file():
-    file_path = filedialog.askopenfilename(defaultextension=".txt", 
-                                           filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
-    if not file_path:
-        return
+    def debug(self):
+        # Récupère l'onglet courant et le fichier associé
+        current_tab = self.notebook.index(self.notebook.select())
+        current_file = self.open_files[current_tab]['file_path']
+        print(current_file)
+        # Trouve toutes les lignes en état "on"
+        on_lines = [line_num for line_num, state in self.line_states[current_file].items() if state]
+        underlined_lines = [line_num for line_num, underline in self.line_underlignes[current_file].items() if underline]
+        # Affiche les lignes "on" et soulignées dans le terminal
+        if on_lines:
+            self.terminal.insert(tk.END, f"Lignes en état 'on': {', '.join(on_lines)}\n")
+        else:
+            self.terminal.insert(tk.END, "Aucune ligne en état 'on'.\n")
+        if underlined_lines:
+            self.terminal.insert(tk.END, f"Lignes soulignées : {', '.join(underlined_lines)}\n")
+        else:
+            self.terminal.insert(tk.END, "Aucune ligne soulignée.\n")
+    def run_action(self):
+        # Identifier l'onglet actif
+        current_tab_index = self.notebook.index(self.notebook.select())
+        current_tab = self.open_files[current_tab_index]
 
-    # Créer un nouvel onglet
-    tab = ttk.Frame(notebook)
-    
-    # Ajouter un onglet avec un titre
-    tab_title = file_path.split("/")[-1] + "   "  # Espace ajouté pour le bouton
-    notebook.add(tab, text=tab_title)
-    
-    # Cadre pour le contenu du fichier et le bouton de fermeture
-    content_frame = tk.Frame(tab)
-    content_frame.pack(expand=True, fill='both', padx=10, pady=10)
-
-    # Barre de défilement
-    scrollbar = tk.Scrollbar(content_frame)
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-    # Zone de texte avec numéros de ligne
-    listbox = tk.Listbox(content_frame, width=4, height=15, font=("Arial", 12),)  # Taille de la police réduite
-    listbox.pack(side=tk.LEFT, fill=tk.Y)
-
-    text_area = Text(content_frame, wrap=tk.WORD, font=("Arial", 12), bg="#e0e0e0", fg="#333333", padx=10, pady=20, spacing1=1, yscrollcommand=scrollbar.set)
-    text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-    # Lier la scrollbar à la zone de texte et à la listbox
-    scrollbar.config(command=lambda *args: (text_area.yview(*args), listbox.yview(*args)))
-
-    # Synchroniser le défilement entre la zone de texte et la listbox
-    def on_text_scroll(*args):
-        listbox.yview_moveto(args[0])
-
-    def on_listbox_scroll(*args):
-        text_area.yview_moveto(args[0])
-
-    # Lier les événements de défilement
-    text_area.config(yscrollcommand=on_text_scroll)
-    listbox.config(yscrollcommand=on_listbox_scroll)
-
-    # Charger le contenu du fichier dans la zone de texte
-    with open(file_path, 'r') as file:
-        content = file.read()
-        text_area.insert(tk.END, content)
-    
-    # Liste pour garder la trace des lignes cliquées
-    clicked_lines = []
-
-    # Fonction pour mettre à jour les numéros de ligne
-    def mettre_a_jour_numeros_lignes(event=None):
-        contenu = text_area.get("1.0", tk.END)
-        lignes = contenu.count("\n") + 1  # Compter les lignes
-        listbox.delete(0, tk.END)  # Supprimer les anciens numéros
-        for i in range(0, lignes + 1):
-            if i == 0:
-                listbox.insert(tk.END, " ")
-            else:
-                listbox.insert(tk.END, str(i))  # Ajouter chaque numéro de ligne
-
-        # Appliquer la couleur verte aux lignes cliquées
-        for ligne in clicked_lines:
-            listbox.itemconfig(ligne, {'bg': 'green', 'fg': 'white'})
-
-    # Fonction appelée lorsqu'un numéro de ligne est cliqué
-    def afficher_numero_ligne(event):
-        selection = listbox.curselection()
-        if selection:
-            ligne = selection[0]  # Les indices commencent à 0
-            if ligne > 0:  # Ignorer la ligne 0 (vide)
-                if ligne in clicked_lines:
-                    clicked_lines.remove(ligne)
-                    print(f"Ligne désactivée : {ligne}")
-                else:
-                    clicked_lines.append(ligne)
-                    print(f"Ligne activée : {ligne}")
-                mettre_a_jour_numeros_lignes()  # Mettre à jour l'affichage
-
-    # Lier l'événement du clic sur un numéro de ligne
-    listbox.bind("<ButtonRelease-1>", afficher_numero_ligne)
-
-    # Mettre à jour les numéros de ligne à chaque modification du texte
-    text_area.bind("<KeyRelease>", mettre_a_jour_numeros_lignes)
-
-    # Initialiser les numéros de ligne
-    mettre_a_jour_numeros_lignes()
-
-    # Ajouter un bouton de fermeture en haut à droite
-    close_button = tk.Button(content_frame, text="✕", command=lambda: close_tab(tab), 
-                             bg="#F44336", fg="white", font=("Arial", 12, "bold"), bd=0, width=3)
-    close_button.place(relx=0.95, rely=0.05)  # Positionnement en haut à droite du cadre
-
-    # Bouton d'enregistrement sous la zone de texte
-    save_button = tk.Button(content_frame, text="Enregistrer", bg="#4CAF50", fg="white", width=15,
-                        command=lambda: save_changes(file_path, text_area))
-    save_button.place(relx=0.5, rely=1.0, anchor="s", y=-10)  # Placer le bouton en bas au centre
-
-# Fonction pour fermer un onglet
-def close_tab(tab):
-    index = notebook.index(tab)
-    notebook.forget(index)
-
-# Fonction pour enregistrer les modifications du fichier
-def save_changes(file_path, text_area):
-    with open(file_path, 'w') as file:
-        file.write(text_area.get("1.0", tk.END))
-    messagebox.showinfo("Succès", f"Modifications enregistrées dans: {file_path}")
-
-# Fonction pour quitter l'application
-def quit_application():
-    root.destroy()
-
-# Fenêtre principale
-root = tk.Tk()
-root.title("Gestionnaire de fichiers")
-
-# Récupérer la largeur et la hauteur de l'écran
-largeur_ecran = root.winfo_screenwidth()
-hauteur_ecran = root.winfo_screenheight()
-
-# Définir la taille de la fenêtre en fonction de la résolution de l'écran
-root.geometry(f"{largeur_ecran}x{hauteur_ecran}")
-
-root.configure(bg='#d0e1f9')
-
-# Création d'un Notebook pour les onglets
-notebook = ttk.Notebook(root)
-notebook.pack(expand=True, fill="both", padx=10, pady=10)
-
-# Cadre pour les boutons principaux
-button_frame = tk.Frame(root, bg='#d0e1f9')
-button_frame.pack(pady=5)  # Réduire le padding ici
-
-# Bouton pour créer un fichier
-create_button = tk.Button(button_frame, text="Créer un fichier", command=create_file, bg="#2196F3", fg="white", width=20, height=2)
-create_button.grid(row=0, column=0, padx=5, pady=2)  # Réduire le padding ici
-
-# Bouton pour ouvrir un fichier
-open_button = tk.Button(button_frame, text="Ouvrir un fichier", command=open_file, bg="#FF9800", fg="white", width=20, height=2)
-open_button.grid(row=1, column=0, padx=5, pady=2)  # Réduire le padding ici
-
-# Bouton pour exécuter un programme C
-execute_button = tk.Button(button_frame, text="Exécuter programme C", command=execute_c_program, bg="#9C27B0", fg="white", width=20, height=2)
-execute_button.grid(row=2, column=0, padx=5, pady=2)  # Réduire le padding ici
-
-# Bouton pour quitter l'application
-quit_button = tk.Button(button_frame, text="Quitter", command=quit_application, bg="#F44336", fg="white", width=20, height=2)
-quit_button.grid(row=3, column=0, padx=5, pady=2)  # Réduire le padding ici
-
-# Lancer la boucle principale
-root.mainloop()
-print("test")
+        # Récupérer le fichier et le widget texte de l'onglet actif
+        file_path = current_tab['file_path'] or f"Tab_{current_tab_index}"
+        text_widget = current_tab['text_widget']
+        # Ajouter des lignes à souligner
+        self.line_underlignes[file_path]["2"] = True
+        self.line_underlignes[file_path]["5"] = True
+        self.line_underlignes[file_path]["8"] = True
+        # Appeler update_underlignes pour mettre à jour les soulignements
+        self.update_underlignes(text_widget, file_path)
+        # Insérer un message dans le terminal
+        self.terminal.insert(tk.END, "Action triggered by triangle\n")
+    def clear_terminal(self):
+        self.terminal.delete('1.0', tk.END)
+if __name__ == "__main__":
+    root = tk.Tk()
+    editor = TextEditor(root)
+    root.mainloop()
