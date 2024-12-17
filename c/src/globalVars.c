@@ -2,7 +2,7 @@
 // Created by Antonin BÔ on 16/11/2024.
 //
 
-#include "../libs/globalvars.h"
+#include "../libs/globalVars.h"
 
 // Définition des variables globales
 SDL_Window* window = NULL;
