@@ -527,11 +527,11 @@ def generate_c_code(ast):
             c_code.append(f"{node['name']}.{node['attribute']} = {node['value']};")
         # Handle pen's method
         elif node["type"] == "method_call":
-            if len(node["params"])>1:
-                params = ", ".join(map(str, node["params"]))  # Liste des paramètres
+            params = ", ".join(map(str, node["params"]))  # Liste des paramètres
+            if len(node["params"]) > 0:
+                c_code.append(f"{node['method']}({node['name']},{params});")
             else :
-                params = "".join(map(str, node["params"]))
-            c_code.append(f"{node['method']}({node['name']},{params});")
+                c_code.append(f"{node['method']}({node['name']});")
 
 
         else:
