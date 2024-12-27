@@ -151,6 +151,8 @@ class Parser:
             if self.tokens[self.current][1] == ",":
                 self.consume("SYMBOL")  # Consume ','
         self.consume("SYMBOL")  # ')'
+        if self.tokens[self.current+1][1] == ";":
+            self.consume("SYMBOL") # ";"""
         return {"type": "function_call", "name": func_name, "args": args}
 
     def parse_function(self):
@@ -433,6 +435,7 @@ class Parser:
     
     def parse(self):
         ast = []
+        print(ast)
         while self.current < len(self.tokens):
             print(f"Parsing statement starting at token {self.current}")  # Debug log
             try:
@@ -458,7 +461,7 @@ def generate_c_code(ast):
     Generate C code from the given Abstract Syntax Tree (AST).
     """
     c_code = []
-
+    print(ast)
     for node in ast:
         if node["type"] == "var_decl":
             value = generate_c_code([node["value"]]) if isinstance(node["value"], dict) else node["value"]
@@ -470,7 +473,7 @@ def generate_c_code(ast):
             c_code.append(f"{node['name']}.{node['method']}({params});")
         elif node["type"] == "function_call":
             args = ", ".join(node["args"])
-            c_code.append(f"{node['name']}({args});")
+            c_code.append(f"{node['name']}({args})")
         elif node["type"] == "function":
             params = ", ".join([f"{ptype} {pname}" for ptype, pname in node.get("params", [])])
             body = "".join([f"{line}" for line in generate_c_code(node.get("body", [])).split("\n")])
@@ -525,7 +528,10 @@ def generate_c_code(ast):
         # Handle pen's method
         elif node["type"] == "method_call":
             params = ", ".join(map(str, node["params"]))  # Liste des paramètres
-            c_code.append(f"{node['name']}.{node['method']}({params});")
+            if len(node["params"]) > 0:
+                c_code.append(f"{node['method']}({node['name']},{params});")
+            else :
+                c_code.append(f"{node['method']}({node['name']});")
 
 
         else:
