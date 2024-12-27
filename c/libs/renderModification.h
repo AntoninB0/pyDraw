@@ -1,7 +1,3 @@
-//
-// Created by NZXT on 16/11/2024.
-//
-
 #ifndef PYDRAW_RENDERMODIFICATION_H
 #define PYDRAW_RENDERMODIFICATION_H
 

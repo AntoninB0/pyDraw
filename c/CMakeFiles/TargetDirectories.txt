@@ -1,0 +1,4 @@
+/home/cytech/Desktop/pd/pyDraw/c/CMakeFiles/my_sdl_program.dir
+/home/cytech/Desktop/pd/pyDraw/c/CMakeFiles/clean_run.dir
+/home/cytech/Desktop/pd/pyDraw/c/CMakeFiles/edit_cache.dir
+/home/cytech/Desktop/pd/pyDraw/c/CMakeFiles/rebuild_cache.dir

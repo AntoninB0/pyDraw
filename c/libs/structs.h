@@ -1,7 +1,3 @@
-//
-// Created by Antonin BÔ on 16/11/2024.
-//
-
 #ifndef PYDRAW_STRUCTS_H
 #define PYDRAW_STRUCTS_H
 

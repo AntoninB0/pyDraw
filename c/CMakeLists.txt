@@ -1,44 +1,38 @@
-cmake_minimum_required(VERSION 3.26)
-project(pyDraw C)
+# Version minimale de CMake requise
+cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_C_STANDARD 11)
-##
-# Définir les répertoires include et lib en fonction de l'architecture
-set(SDL2_INCLUDE_DIR C:/libs/SDL2-2.30.7/include)
-if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(SDL2_LIB_DIR C:/libs/SDL2-2.30.7/lib/x64)
-else ()
-    set(SDL2_LIB_DIR C:/libs/SDL2-2.30.7/lib/x86)
-endif ()
+# Nom du projet
+project(MySDLProject C)
 
-include_directories(${SDL2_INCLUDE_DIR})
-link_directories(${SDL2_LIB_DIR})
+# Standard C utilisé
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -g")
 
-add_executable(${PROJECT_NAME} main.c
-        libs/consts.h
-        libs/structs.h
-        libs/globalVars.h
-        src/sdlRelated.c
-        libs/sdlRelated.h
-        src/globalVars.c
-        src/fill.c
-        libs/fill.h
-        src/matrixManipulation.c
-        libs/matrixManipulation.h
-        src/miscs.c
-        libs/miscs.h
-        src/pen.c
-        libs/pen.h
-        libs/pyDraw.h
-        src/renderModification.c
-        libs/renderModification.h
-)
+# Déclaration des chemins
+set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
+set(LIB_DIR ${CMAKE_SOURCE_DIR}/libs)
 
-target_link_libraries(${PROJECT_NAME} SDL2main SDL2)
+# Ajouter les fichiers source depuis /src
+file(GLOB_RECURSE SRCS ${SRC_DIR}/*.c)
 
-# Copier automatiquement SDL2.dll dans le répertoire de build
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${SDL2_LIB_DIR}/SDL2.dll"
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>
+# Création de l'exécutable
+add_executable(my_sdl_program ${SRCS})
+
+# Inclure les headers depuis /libs
+include_directories(${LIB_DIR})
+
+# Inclusion des bibliothèques SDL2
+find_package(SDL2 REQUIRED)
+
+# Ajouter les chemins d'inclusion et lier les bibliothèques
+target_include_directories(my_sdl_program PRIVATE ${SDL2_INCLUDE_DIRS})
+target_link_libraries(my_sdl_program ${SDL2_LIBRARIES} m)
+
+# Ajout d'un clean run
+add_custom_target(clean_run
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/CMakeFiles
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/src
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/libs
+    COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/my_sdl_program
+    COMMENT "Nettoyage complet du répertoire de build"
 )

@@ -1,7 +1,3 @@
-//
-// Created by NZXT on 16/11/2024.
-//
-
 #include "../libs/fill.h"
 
 POS pop(Stack *stack) {
