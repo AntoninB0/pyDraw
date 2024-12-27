@@ -1,7 +1,3 @@
-//
-// Created by NZXT on 16/11/2024.
-//
-
 #ifndef PYDRAW_MATRIXMANIPULATION_H
 #define PYDRAW_MATRIXMANIPULATION_H
 

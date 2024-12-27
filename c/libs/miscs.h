@@ -1,7 +1,3 @@
-//
-// Created by NZXT on 16/11/2024.
-//
-
 #ifndef PYDRAW_MISCS_H
 #define PYDRAW_MISCS_H
 
