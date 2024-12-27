@@ -69,8 +69,6 @@ include CMakeFiles/clean_run.dir/progress.make
 CMakeFiles/clean_run:
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/cytech/Desktop/pd/pyDraw/c/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Nettoyage complet du répertoire de build"
 	/usr/bin/cmake -E remove_directory /home/cytech/Desktop/pd/pyDraw/c/CMakeFiles
-	/usr/bin/cmake -E remove_directory /home/cytech/Desktop/pd/pyDraw/c/src
-	/usr/bin/cmake -E remove_directory /home/cytech/Desktop/pd/pyDraw/c/libs
 	/usr/bin/cmake -E remove /home/cytech/Desktop/pd/pyDraw/c/my_sdl_program
 
 clean_run: CMakeFiles/clean_run

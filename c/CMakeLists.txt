@@ -31,8 +31,6 @@ target_link_libraries(my_sdl_program ${SDL2_LIBRARIES} m)
 # Ajout d'un clean run
 add_custom_target(clean_run
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/CMakeFiles
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/src
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/libs
     COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/my_sdl_program
     COMMENT "Nettoyage complet du répertoire de build"
 )
