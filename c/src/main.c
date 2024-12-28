@@ -2,10 +2,9 @@
 
 void test(){
 
-    PEN pen = initPen();
-    PEN pen1 = initPen();
-    pen1.x = 0;
-    pen1.y = 0;
+    PEN pen = createPen(WIDTH/2, HEIGHT/2);
+    PEN pen1 = createPen(0,0);
+
 
     lineWrite(100, pen1);
     pen1.x = 200;

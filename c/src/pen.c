@@ -14,6 +14,12 @@ PEN initPen() {
     pen.color.a = DEFAULTCOLOR_PEN_A;
     return pen;
 }
+PEN createPen(int x,int y){
+    PEN pen = initPen();
+    pen.x = x;
+    pen.y = y;
+    return pen;
+}
 
 
 PEN goTo(int x, int y, PEN pen){

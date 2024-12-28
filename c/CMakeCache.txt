@@ -201,15 +201,6 @@ MySDLProject_SOURCE_DIR:STATIC=/home/cytech/Desktop/pd/pyDraw/c
 //The directory containing a CMake configuration file for SDL2.
 SDL2_DIR:PATH=/usr/local/lib/cmake/SDL2
 
-//Value Computed by CMake
-pyDraw_BINARY_DIR:STATIC=/home/cytech/Desktop/pd/pyDraw/c
-
-//Value Computed by CMake
-pyDraw_IS_TOP_LEVEL:STATIC=ON
-
-//Value Computed by CMake
-pyDraw_SOURCE_DIR:STATIC=/home/cytech/Desktop/pd/pyDraw/c
-
 
 ########################
 # INTERNAL cache entries
