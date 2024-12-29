@@ -5,7 +5,7 @@ TOKENS = [
     #("FUNC", r"func\s+(int|float|bool|string|pen|void)\s+(\w+)\s*\(\s*((?:\s*(int|float|bool|string|pen)\s+\w+\s*,?\s*)*)\)\s*{"),
     
     ("COMMENT", r"//.*"),  # Single-line comments : take everything after .*
-    ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|skip|leave|break|return|cursor|down|up|walk|goTo|jumpTo|rectangle|circle|triangleIso|rotateCW|rotateCCW|fillColor|initMatrix|clearMatrix|compareSDLColors|defineColor|approxPosX|approxPosY|approxPos|float2Rad|pixelColor|circleWrite|rotateArea|copyPaste|copy|paste|cut|translation|waitKey|closeEventSDL|renderMatrix|initSDL)\b"),
+    ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|skip|leave|break|return|cursor|down|up|walk|goTo|jumpTo|rectangle|circle|triangleIso|rotateCW|rotateCCW|func)\b"), #\b...\b check if there is the word ...  
     ("OPERATOR", r"[=+\-*/><!&|]{1,2}"),  # Includes =, ==, !=, &, |, ++, -- because of the 2 in {1,2}, [...] list of element and combination with max 2 charactere
     ("SYMBOL", r"[{}();,.]"),  # Specific symbols
     ("NUMBER", r"\b\d+(\.\d+)?\b"),  # Integers and floats
@@ -62,14 +62,8 @@ class Parser:
         self.consume("OPERATOR")  # Assignment operator '='
         
         # Gestion des appels de fonction ou d'expressions
-        print("ici")
-        if (self.tokens[self.current][0] == "IDENTIFIER" or self.tokens[self.current][0] == "KEYWORD") and self.tokens[self.current + 1][1] == "(":
-            print("icii")
-            if self.tokens[self.current][0] == "IDENTIFIER" :
-                value = self.parse_function_call(self.consume("IDENTIFIER"))
-            elif self.tokens[self.current][0] == "KEYWORD" :
-                value = self.parse_function_call(self.consume("KEYWORD"))
-
+        if self.tokens[self.current][0] == "IDENTIFIER" and self.tokens[self.current + 1][1] == "(":
+            value = self.parse_function_call(self.consume("IDENTIFIER"))
         else:
             value = self.parse_expression()  # Parse an expression
 
@@ -79,8 +73,11 @@ class Parser:
         return {"type": "var_decl", "var_type": var_type, "name": name, "value": value}
     
     def parse_pen_declaration(self):
+        print("ici")
         self.consume("KEYWORD")  # Consume the type pen
+        print("2")
         name = self.consume("IDENTIFIER")  # name of the pen
+        print("3")
         self.consume("OPERATOR")  # Consume "="
         self.consume("KEYWORD")  # Consume "cursor"
         self.consume("SYMBOL")  # Consume "("
@@ -147,7 +144,6 @@ class Parser:
         return {"type": "pen_attribute", "name": pen_name, "attribute": attribute,"value":value}
 
     def parse_function_call(self, func_name):
-        print('la')
         self.consume("SYMBOL")  # '('
         args = []
         while self.tokens[self.current][1] != ")":
@@ -376,38 +372,7 @@ class Parser:
             return f"({expr})"
         else:
             raise SyntaxError(f"Unexpected token in term: {token_value}")
-    def parse_sdl_function(self):
-        """
-        Parse calls to native SDL/2D functions like fillColor(...), initMatrix(), etc.
-        Returns a node in the AST that looks like:
-        {
-            "type": "sdl_function_call",
-            "name": <function_name>,
-            "args": [ list_of_arguments ]
-        }
-        """
-        # Récupère le nom de la fonction (ex: fillColor)
-        func_name = self.consume("KEYWORD")  # Puisqu'on les a déclarées en KEYWORD
-        
-        self.consume("SYMBOL")  # Consomme "("
-        
-        args = []
-        # Si la fonction prend des arguments
-        while self.tokens[self.current][1] != ")":
-            args.append(self.parse_expression())
-            if self.tokens[self.current][1] == ",":
-                self.consume("SYMBOL")  # consomme ","
-        
-        self.consume("SYMBOL")  # Consomme ")"
-        # On consomme enfin le ";" final
-        self.consume("SYMBOL")  # Consomme ";"
-        
-        return {
-            "type": "sdl_function_call",
-            "name": func_name,
-            "args": args
-        }
-
+    
     def parse_statement(self):
         """
         Parse a single statement in the code. Handles variable declarations, method calls, 
@@ -416,15 +381,9 @@ class Parser:
         token_type, token_value = self.tokens[self.current]
         next_token_type, next_token_value = self.tokens[self.current + 1]
 
-        # 1. Détection des fonctions "système" type SDL/2D (fillColor, initMatrix, etc.)
-        if token_type == "KEYWORD" and token_value in [
-            "fillColor", "initMatrix", "clearMatrix", "compareSDLColors", "defineColor",
-            "approxPosX", "approxPosY", "approxPos", "float2Rad", "pixelColor",
-            "circleWrite", "rotateArea", "copyPaste", "copy", "paste", "cut", "translation",
-            "waitKey", "closeEventSDL", "renderMatrix", "initSDL"
-        ]:
-            # On délègue l'analyse à une méthode parse_sdl_function()
-            return self.parse_sdl_function()
+        # Handle function definitions
+        if token_type == "KEYWORD" and token_value == "func":
+            return self.parse_function()
         # Handle pen declarations
         elif token_type == "KEYWORD" and token_value == "pen":
             return self.parse_pen_declaration()
@@ -438,9 +397,7 @@ class Parser:
             else :
                 return self.parse_pen_method(pen_name)
         
-        # Handle function definitions
-        elif token_type == "KEYWORD" and token_value == "func":
-            return self.parse_function()
+
         # Handle variable declarations like `int x = 5;`
         elif token_type == "KEYWORD" and token_value in ["int", "float", "bool", "string"]:
             return self.parse_variable_declaration()
@@ -517,11 +474,6 @@ def generate_c_code(ast):
         elif node["type"] == "function_call":
             args = ", ".join(node["args"])
             c_code.append(f"{node['name']}({args})")
-        elif node["type"] == "sdl_function_call":
-            func_name = node["name"]  
-            args = ", ".join(node["args"]) 
-            c_code.append(f"{func_name}({args});")
-
         elif node["type"] == "function":
             params = ", ".join([f"{ptype} {pname}" for ptype, pname in node.get("params", [])])
             body = "".join([f"{line}" for line in generate_c_code(node.get("body", [])).split("\n")])
