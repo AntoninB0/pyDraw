@@ -570,6 +570,7 @@ def write_file(filename, content):
 
 def main(input_file, output_file):
     try:
+        result = {}
         pydraw_code = read_file(input_file)
         tokens = tokenize(pydraw_code)
         parser = Parser(tokens)
@@ -577,14 +578,17 @@ def main(input_file, output_file):
         ast = parser.parse()
         c_code = generate_c_code(ast)
         write_file(output_file, c_code)
+        result[0] = "Compilation successful! C code has been generated in output.c"
         print(f"Compilation successful! C code has been generated in {output_file}.")
+        print ( result[0] , "///////////")
+        return result
     except SyntaxErrorWithLine as e:
-        print(e.line)
-        print(e.message)
-        return {e.line: e.message}
+        result = {}
+        print(e.line,e.message)
+        result[e.line] = e.message
+        return result
     except Exception as e:
         print(f"Error: {e}")
-
 
 if __name__ == "__main__":
     main("test.txt", "output.c")
