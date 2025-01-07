@@ -41,6 +41,14 @@ def tokenize(code):
             raise SyntaxError(f"Unexpected character '{code[current_index]}' at line {line_number}")
 
     return tokens
+class SyntaxErrorWithLine(Exception):
+    def __init__(self, line, message):
+        super().__init__(message)
+        self.line = line
+        self.message = message
+
+    def __str__(self):
+        return f"Line {self.line}: {self.message}"
 
 class Parser:
     def __init__(self, tokens):
@@ -71,7 +79,7 @@ class Parser:
 
         # Vérifie si la variable existe déjà
         if name in self.variables:
-            raise SyntaxError(f"Line {token_line}: Variable '{name}' already declared")
+            raise SyntaxErrorWithLine(token_line, f"Variable '{name}' already declared")
 
         # Vérifie si c'est un appel de fonction
         # On doit accéder à self.tokens[self.current] et self.tokens[self.current+1], chacun ayant 3 valeurs
@@ -108,7 +116,7 @@ class Parser:
         self.consume("KEYWORD")  # 'pen'
         name = self.consume("IDENTIFIER")
         if name in self.variables:
-            raise SyntaxError(f"Line {token_line}: Variable '{name}' already declared")
+            raise SyntaxErrorWithLine(token_line, f"Variable '{name}' already declared")
 
         self.consume("OPERATOR")  # '='
         self.consume("KEYWORD")   # 'cursor'
@@ -126,9 +134,9 @@ class Parser:
         token_type, token_value, token_line = self.tokens[self.current]
         # Vérifie la déclaration
         if pen_name not in self.variables:
-            raise SyntaxError(f"Line {token_line}: Pen '{pen_name}' is not declared")
+            raise SyntaxErrorWithLine(token_line, f"Variable '{pen_name}' is not declared")
         if self.variables[pen_name] != "pen":
-            raise SyntaxError(f"Line {token_line}: Variable '{pen_name}' is not a pen")
+            raise SyntaxErrorWithLine(token_line, f"Variable '{pen_name}' is not a pen")
 
         self.consume("SYMBOL")  # '.'
         method = self.consume("KEYWORD")
@@ -149,9 +157,9 @@ class Parser:
     def parse_pen_attribute(self, pen_name):
         token_type, token_value, token_line = self.tokens[self.current]
         if pen_name not in self.variables:
-            raise SyntaxError(f"Line {token_line}: Pen '{pen_name}' is not declared")
+            raise SyntaxErrorWithLine(token_line, f"Variable '{pen_name}' is not declared")
         if self.variables[pen_name] != "pen":
-            raise SyntaxError(f"Line {token_line}: Variable '{pen_name}' is not a pen")
+            raise SyntaxErrorWithLine(token_line, f"Variable '{pen_name}' is not a pen")
 
         self.consume("SYMBOL")  # '.'
         attribute = self.consume("PEN_ATTRIBUTE")
@@ -162,7 +170,7 @@ class Parser:
         elif attribute == "color":
             value = self.consume("STRING")
         else:
-            raise SyntaxError(f"Line {token_line}: '{attribute}' is not a valid pen attribute")
+            raise SyntaxErrorWithLine(token_line, f"Variable '{attribute}' is not a valid pen attribute")
 
         self.consume("SYMBOL")  # ';'
         return {
@@ -175,7 +183,7 @@ class Parser:
     def parse_function_call(self, func_name):
         token_type, token_value, token_line = self.tokens[self.current]
         if func_name not in self.functions:
-            raise SyntaxError(f"Line {token_line}: Function '{func_name}' is not declared")
+            raise SyntaxErrorWithLine(token_line, f"Variable '{func_name}' is not declared")
 
         self.consume("SYMBOL")  # '('
         args = []
@@ -215,7 +223,7 @@ class Parser:
         self.consume("SYMBOL")  # '}'
 
         if name in self.functions:
-            raise SyntaxError(f"Line {token_line}: Function '{name}' already declared")
+            raise SyntaxErrorWithLine(token_line, f"Function '{name}' already declared")
         self.functions[name] = return_type
 
         return {
@@ -308,7 +316,7 @@ class Parser:
         name, var_line = self._consume_identifier_checked()
         operation_type, operation_val, operation_line = self.tokens[self.current]
         if operation_type != "OPERATOR" or operation_val not in ["++","--"]:
-            raise SyntaxError(f"Line {operation_line}: Unexpected increment operation '{operation_val}'")
+            raise SyntaxErrorWithLine(operation_line, f"Unexpected increment operation : '{operation_val}'")
         self.current += 1
 
         return {"type": "short_operation", "name": name, "operation": operation_val}
@@ -317,7 +325,7 @@ class Parser:
         name, var_line = self._consume_identifier_checked()
         operation_type, operation_val, operation_line = self.tokens[self.current]
         if operation_type != "OPERATOR" or operation_val not in ["++","--"]:
-            raise SyntaxError(f"Line {operation_line}: Unexpected operation '{operation_val}'")
+            raise SyntaxErrorWithLine(operation_line, f"Unexpected operation '{operation_val}'")
 
         self.current += 1
         # consomme le ';'
@@ -329,17 +337,17 @@ class Parser:
     def parse_assignment(self):
         token_type, left, token_line = self.tokens[self.current]
         if token_type != "IDENTIFIER":
-            raise SyntaxError(f"Line {token_line}: expected variable name, got {left}")
+            raise SyntaxErrorWithLine(token_line, f"Expected variable name, got {left}")
 
         # Vérifier la variable
         if left not in self.variables:
-            raise SyntaxError(f"Line {token_line}: Variable '{left}' is not declared before use (assignment)")
+            raise SyntaxErrorWithLine(token_line, f"Variable '{left}' is not declared before use (assignment)")
 
         self.current += 1  # consomme l'identifiant
 
         op_type, op_val, op_line = self.tokens[self.current]
         if op_type != "OPERATOR" or op_val != "=":
-            raise SyntaxError(f"Line {op_line}: expected '=' for assignment, got {op_val}")
+            raise SyntaxErrorWithLine(op_line, f"Expected '=' for assignment, got {op_val}")
         self.current += 1
 
         right = self.parse_expression()
@@ -379,12 +387,13 @@ class Parser:
             self.consume("SYMBOL")
             return f"({expr})"
         else:
-            raise SyntaxError(f"Line {token_line}: Unexpected token in term: {token_value}")
+            raise SyntaxErrorWithLine(token_line, f"Unexpected token in term: {token_value}")
 
     def parse_sdl_function(self):
         func_name_type, func_name_val, func_line = self.tokens[self.current]
         if func_name_type != "KEYWORD":
-            raise SyntaxError(f"Line {func_line}: Expected SDL function name, got '{func_name_val}'")
+            raise SyntaxErrorWithLine(func_line, f"Expected SDL function name, got '{func_name_val}'")
+        
 
         self.current += 1  # consomme le nom de la fonction
 
@@ -424,7 +433,7 @@ class Parser:
             pen_name_t, pen_name_val, pen_name_line = self.tokens[self.current]
             self.current += 1  # consomme l'identifiant
             if pen_name_val not in self.variables:
-                raise SyntaxError(f"Line {pen_name_line}: Pen '{pen_name_val}' not declared.")
+                raise SyntaxErrorWithLine(pen_name_line, f"Pen '{pen_name_val}' not declared.")
             # peek sur la suite
             next_next_type, next_next_val, next_next_line = self.tokens[self.current+1]
             if next_next_type == "PEN_ATTRIBUTE":
@@ -457,7 +466,7 @@ class Parser:
             else:
                 return self.parse_assignment()
         else:
-            raise SyntaxError(f"Line {token_line}: Unexpected token in statement: {token_value}")
+            raise SyntaxErrorWithLine(token_line, f"Unexpected token in statement: {token_value}")
 
     def _current_token(self):
         if self.current < len(self.tokens):
@@ -468,9 +477,9 @@ class Parser:
     def _consume_identifier_checked(self):
         token_type, token_value, token_line = self.tokens[self.current]
         if token_type != "IDENTIFIER":
-            raise SyntaxError(f"Line {token_line}: Expected identifier, got '{token_value}'")
+            raise SyntaxErrorWithLine(token_line, f"Expected identifier, got '{token_value}'")
         if token_value not in self.variables:
-            raise SyntaxError(f"Line {token_line}: Variable '{token_value}' is not declared.")
+            raise SyntaxErrorWithLine(token_line, f"Variable '{token_value}' is not declared.")
         self.current += 1
         return token_value, token_line
 
@@ -561,15 +570,21 @@ def write_file(filename, content):
 
 def main(input_file, output_file):
     try:
-        code = read_file(input_file)
-        tokens = tokenize(code)
+        pydraw_code = read_file(input_file)
+        tokens = tokenize(pydraw_code)
         parser = Parser(tokens)
+        
         ast = parser.parse()
         c_code = generate_c_code(ast)
         write_file(output_file, c_code)
         print(f"Compilation successful! C code has been generated in {output_file}.")
+    except SyntaxErrorWithLine as e:
+        print(e.line)
+        print(e.message)
+        return {e.line: e.message}
     except Exception as e:
         print(f"Error: {e}")
+
 
 if __name__ == "__main__":
     main("test.txt", "output.c")
