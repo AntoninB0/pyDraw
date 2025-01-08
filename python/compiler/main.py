@@ -534,7 +534,7 @@ def generate_c_code(ast, lst):
     for node in ast:
         # Insert wait(1) if the current line is in wait_lines
         if current_line in lst:
-            c_code.append("wait(1);")
+            c_code.append("WAIT")
         if node["type"] == "var_decl":
             value = generate_c_code([node["value"]]) if isinstance(node["value"], dict) else node["value"]
             c_code.append(f"{node['var_type']} {node['name']} = {value};")
