@@ -605,7 +605,7 @@ def write_file(filename, content):
         f.write(content)
 
 # Main function to execute the compiler process
-def main(input_file, output_file):
+def main(input_file, output_file, lst):
     try:
         pydraw_code = read_file(input_file)
         tokens = tokenize(pydraw_code)
@@ -622,7 +622,7 @@ def main(input_file, output_file):
         return {e.line: e.message}
     except Exception as e:
         # Other exceptions are logged as errors
-        print(f"Error: {e}")
+        return {"General error":e}
 
 if __name__ == "__main__":
-    main("test.txt", "output.c")
+    main("test.txt", "output.c", lst)
