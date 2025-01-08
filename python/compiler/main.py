@@ -60,15 +60,15 @@ class Parser:
     def consume(self, expected_type):
         token_type, token_value, token_line = self.tokens[self.current]
         if self.current >= len(self.tokens):
-            raise SyntaxError(f"Line {token_line}: Unexpected end of tokens, expected {expected_type}")
+            raise SyntaxErrorWithLine(token_line, f"Unexpected end of tokens, expected {expected_type}")
 
         token_type, token_value, token_line = self.tokens[self.current]
         if token_type == expected_type:
             self.current += 1
             return token_value
         else:
-            raise SyntaxError(
-                f"Line {token_line}: Expected {expected_type} but got {token_type} ('{token_value}')"
+            raise SyntaxErrorWithLine(token_line,
+                f"Expected {expected_type} but got {token_type} ('{token_value}')"
             )
 
     # Parses variable declarations, checking for redeclarations and parsing initial values
