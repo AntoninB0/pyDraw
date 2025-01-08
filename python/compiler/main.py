@@ -528,9 +528,13 @@ class Parser:
         return ast
 
 # Function to generate C code from the parsed AST, handling various statement and expression types
-def generate_c_code(ast):
+def generate_c_code(ast, lst):
     c_code = []
+    current_line = 1
     for node in ast:
+        # Insert wait(1) if the current line is in wait_lines
+        if current_line in lst:
+            c_code.append("wait(1);")
         if node["type"] == "var_decl":
             value = generate_c_code([node["value"]]) if isinstance(node["value"], dict) else node["value"]
             c_code.append(f"{node['var_type']} {node['name']} = {value};")
@@ -592,7 +596,7 @@ def generate_c_code(ast):
                 c_code.append(f"{node['method']}({node['name']});")
         else:
             raise ValueError(f"Unknown AST node type: {node['type']}.")
-
+        current_line+=1 
     return "\n".join(c_code)
 
 # Functions to read from and write to files
@@ -612,7 +616,7 @@ def main(input_file, output_file, lst):
         parser = Parser(tokens)
         
         ast = parser.parse()
-        c_code = generate_c_code(ast)
+        c_code = generate_c_code(ast, lst)
         write_file(output_file, c_code)
         print(f"Compilation successful! C code has been generated in {output_file}.")
     except SyntaxErrorWithLine as e:
