@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import platform  
-from compiler import main
+import main
        
 
 class TextEditor:
@@ -347,32 +347,21 @@ class TextEditor:
                 # find all lines with on click
                 on_lines = [line_num for line_num, state in self.line_states[current_file].items() if state]
                 underlined_lines = [line_num for line_num, underline in self.line_underlignes[current_file].items() if underline]
-                    
-                # pritn in the terminal
-                if on_lines:
-                    self.terminal.insert(tk.END, f"Lignes en état 'on': {', '.join(on_lines)}\n")
-                else:
-                    self.terminal.insert(tk.END, "Aucune ligne en état 'on'.\n")
-                    
-                if underlined_lines:
-                    self.terminal.insert(tk.END, f"Lignes soulignées : {', '.join(underlined_lines)}\n")
-                else:
-                    self.terminal.insert(tk.END, "Aucune ligne soulignée.\n")
-
-       
-    def run_action(self):
+                self.run_action(on_lines)
+      
+    def run_action(self,on_lines = []):
         # take a current tab
+        self.save_file()
         current_tab_index = self.notebook.index(self.notebook.select())
         current_tab = self.open_files[current_tab_index]
         file_path = current_tab['file_path']
-        result = main.main(file_path,"output.c")   
         text_widget = current_tab['text_widget']
-        print(text_widget, ": ////////////////")
         liste_key = []
+        print("/////////////////", file_path)
         if file_path :
             if file_path != "doc.txt":
+                result = main.main(file_path,"output.c",on_lines)   
                 if result != None :
-                    print (result,"//////////////")
                     for key in result:
                         liste_key.append(key)
                         # underlignes
@@ -383,10 +372,15 @@ class TextEditor:
                             self.terminal.insert(tk.END, f"LIGNE : {key}, ERROR : {result[key]}\n")
                         else : 
                             self.terminal.insert(tk.END, "Compilation successful! C code has been generated in output.c \n")
+                    for i in liste_key :
+                        self.line_underlignes[file_path][key] = False
+                        print("//",self.line_underlignes[file_path].items())
                 else : 
-                    self.terminal.insert(tk.END, "Compilation successful! C code has been generated in output.c")
-        for i in liste_key :
-            self.line_underlignes[file_path][key] = False
+                    self.terminal.insert(tk.END, "Compilation successful! C code has been generated in output.c \n")
+                    for i in liste_key :
+                        self.line_underlignes[file_path][key] = False
+                        print("//",self.line_underlignes[file_path].items())
+                    self.update_underlignes(text_widget, file_path)
 
        
     def clear_terminal(self):
