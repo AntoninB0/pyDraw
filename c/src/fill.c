@@ -43,7 +43,8 @@ void fill(int x, int y, SDL_Color color2Change, SDL_Color colorReplace) {
     }
 }
 
-void fillColor(int x, int y, SDL_Color color){
+void fillColor(int x, int y, char *hex){
+    SDL_Color color = defineColor(hex);
     fill(x, y, pixelColor(x, y), color);
     renderMatrix();
 }

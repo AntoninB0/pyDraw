@@ -7,8 +7,7 @@ void test(){
 
 
     lineWrite(100, pen1);
-    pen1.x = 200;
-    pen1.y = 0;
+    goTo(200,0,pen1);
     pen1.angle = 270;
     lineWrite(100, pen1);
 
@@ -17,11 +16,11 @@ void test(){
     pen1.angle = 470;
     lineWrite(100, pen1);
 
-    fillColor((int)(WIDTH / 2 + 20), (int)(HEIGHT / 2), defineColor(COLOR_GREEN));
+    fillColor((int)(WIDTH / 2 + 20), (int)(HEIGHT / 2), "00FF00");
 
     cirleWrite(300, pen);
 
-    fillColor((int)(WIDTH / 2), (int)(HEIGHT / 2), defineColor(COLOR_BLUE));
+    fillColor((int)(WIDTH / 2), (int)(HEIGHT / 2), "00FFff");
     pen.angle = 50;
     pen = lineWrite(100, pen);
 
@@ -35,7 +34,7 @@ void test(){
         if (i==7){
             pen = goTo((float)(WIDTH / 2),(float)(HEIGHT / 2), pen);
         }else if (i==12){
-            pen.color = defineColor(COLOR_BLUE);
+            pen.color = defineColor("00FFff");
         }else if (i==16) {
             pen.penDown = 0;
         }else if (i==18) {
@@ -43,7 +42,7 @@ void test(){
         }
         pen = lineWrite(500, pen);
     }
-    fillColor((int)(WIDTH / 2 + 20), (int)(HEIGHT / 2), defineColor(COLOR_GREEN));
+    fillColor((int)(WIDTH / 2 + 20), (int)(HEIGHT / 2), "00FF00");
 
     rotateArea((int)(WIDTH / 2 - 400), (int)(HEIGHT / 2), 400, 300, float2Rad(57));
 
@@ -54,10 +53,10 @@ void test(){
     translation((int) (WIDTH / 2 + 100), (int) (HEIGHT / 2 + 100), 400, 200, 100, 20, -5);
 
     WAIT
-    clearMatrix(defineColor(COLOR_RED));
+    clearMatrix("FF0000");
     WAIT
-    clearMatrix(defineColor(COLOR_GREEN));
-    clearMatrix(defineColor(COLOR_BLUE));
+    clearMatrix("00FF00");
+    clearMatrix("0000FF");
 
 }
 

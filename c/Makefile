@@ -117,37 +117,50 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named my_sdl_program
+# Target rules for targets named pyDrawExec
 
 # Build rule for target.
-my_sdl_program: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 my_sdl_program
-.PHONY : my_sdl_program
+pyDrawExec: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 pyDrawExec
+.PHONY : pyDrawExec
 
 # fast build rule for target.
-my_sdl_program/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/build
-.PHONY : my_sdl_program/fast
+pyDrawExec/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/build
+.PHONY : pyDrawExec/fast
 
 #=============================================================================
-# Target rules for targets named clean_run
+# Target rules for targets named cleaning
 
 # Build rule for target.
-clean_run: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 clean_run
-.PHONY : clean_run
+cleaning: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cleaning
+.PHONY : cleaning
 
 # fast build rule for target.
-clean_run/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/clean_run.dir/build.make CMakeFiles/clean_run.dir/build
-.PHONY : clean_run/fast
+cleaning/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cleaning.dir/build.make CMakeFiles/cleaning.dir/build
+.PHONY : cleaning/fast
+
+#=============================================================================
+# Target rules for targets named run
+
+# Build rule for target.
+run: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 run
+.PHONY : run
+
+# fast build rule for target.
+run/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/run.dir/build.make CMakeFiles/run.dir/build
+.PHONY : run/fast
 
 src/fill.o: src/fill.c.o
 .PHONY : src/fill.o
 
 # target to build an object file
 src/fill.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/fill.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/fill.c.o
 .PHONY : src/fill.c.o
 
 src/fill.i: src/fill.c.i
@@ -155,7 +168,7 @@ src/fill.i: src/fill.c.i
 
 # target to preprocess a source file
 src/fill.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/fill.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/fill.c.i
 .PHONY : src/fill.c.i
 
 src/fill.s: src/fill.c.s
@@ -163,7 +176,7 @@ src/fill.s: src/fill.c.s
 
 # target to generate assembly for a file
 src/fill.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/fill.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/fill.c.s
 .PHONY : src/fill.c.s
 
 src/globalVars.o: src/globalVars.c.o
@@ -171,7 +184,7 @@ src/globalVars.o: src/globalVars.c.o
 
 # target to build an object file
 src/globalVars.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/globalVars.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/globalVars.c.o
 .PHONY : src/globalVars.c.o
 
 src/globalVars.i: src/globalVars.c.i
@@ -179,7 +192,7 @@ src/globalVars.i: src/globalVars.c.i
 
 # target to preprocess a source file
 src/globalVars.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/globalVars.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/globalVars.c.i
 .PHONY : src/globalVars.c.i
 
 src/globalVars.s: src/globalVars.c.s
@@ -187,7 +200,7 @@ src/globalVars.s: src/globalVars.c.s
 
 # target to generate assembly for a file
 src/globalVars.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/globalVars.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/globalVars.c.s
 .PHONY : src/globalVars.c.s
 
 src/main.o: src/main.c.o
@@ -195,7 +208,7 @@ src/main.o: src/main.c.o
 
 # target to build an object file
 src/main.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/main.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/main.c.o
 .PHONY : src/main.c.o
 
 src/main.i: src/main.c.i
@@ -203,7 +216,7 @@ src/main.i: src/main.c.i
 
 # target to preprocess a source file
 src/main.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/main.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/main.c.i
 .PHONY : src/main.c.i
 
 src/main.s: src/main.c.s
@@ -211,7 +224,7 @@ src/main.s: src/main.c.s
 
 # target to generate assembly for a file
 src/main.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/main.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/main.c.s
 .PHONY : src/main.c.s
 
 src/matrixManipulation.o: src/matrixManipulation.c.o
@@ -219,7 +232,7 @@ src/matrixManipulation.o: src/matrixManipulation.c.o
 
 # target to build an object file
 src/matrixManipulation.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/matrixManipulation.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/matrixManipulation.c.o
 .PHONY : src/matrixManipulation.c.o
 
 src/matrixManipulation.i: src/matrixManipulation.c.i
@@ -227,7 +240,7 @@ src/matrixManipulation.i: src/matrixManipulation.c.i
 
 # target to preprocess a source file
 src/matrixManipulation.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/matrixManipulation.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/matrixManipulation.c.i
 .PHONY : src/matrixManipulation.c.i
 
 src/matrixManipulation.s: src/matrixManipulation.c.s
@@ -235,7 +248,7 @@ src/matrixManipulation.s: src/matrixManipulation.c.s
 
 # target to generate assembly for a file
 src/matrixManipulation.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/matrixManipulation.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/matrixManipulation.c.s
 .PHONY : src/matrixManipulation.c.s
 
 src/miscs.o: src/miscs.c.o
@@ -243,7 +256,7 @@ src/miscs.o: src/miscs.c.o
 
 # target to build an object file
 src/miscs.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/miscs.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/miscs.c.o
 .PHONY : src/miscs.c.o
 
 src/miscs.i: src/miscs.c.i
@@ -251,7 +264,7 @@ src/miscs.i: src/miscs.c.i
 
 # target to preprocess a source file
 src/miscs.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/miscs.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/miscs.c.i
 .PHONY : src/miscs.c.i
 
 src/miscs.s: src/miscs.c.s
@@ -259,7 +272,7 @@ src/miscs.s: src/miscs.c.s
 
 # target to generate assembly for a file
 src/miscs.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/miscs.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/miscs.c.s
 .PHONY : src/miscs.c.s
 
 src/pen.o: src/pen.c.o
@@ -267,7 +280,7 @@ src/pen.o: src/pen.c.o
 
 # target to build an object file
 src/pen.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/pen.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/pen.c.o
 .PHONY : src/pen.c.o
 
 src/pen.i: src/pen.c.i
@@ -275,7 +288,7 @@ src/pen.i: src/pen.c.i
 
 # target to preprocess a source file
 src/pen.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/pen.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/pen.c.i
 .PHONY : src/pen.c.i
 
 src/pen.s: src/pen.c.s
@@ -283,7 +296,7 @@ src/pen.s: src/pen.c.s
 
 # target to generate assembly for a file
 src/pen.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/pen.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/pen.c.s
 .PHONY : src/pen.c.s
 
 src/renderModification.o: src/renderModification.c.o
@@ -291,7 +304,7 @@ src/renderModification.o: src/renderModification.c.o
 
 # target to build an object file
 src/renderModification.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/renderModification.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/renderModification.c.o
 .PHONY : src/renderModification.c.o
 
 src/renderModification.i: src/renderModification.c.i
@@ -299,7 +312,7 @@ src/renderModification.i: src/renderModification.c.i
 
 # target to preprocess a source file
 src/renderModification.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/renderModification.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/renderModification.c.i
 .PHONY : src/renderModification.c.i
 
 src/renderModification.s: src/renderModification.c.s
@@ -307,7 +320,7 @@ src/renderModification.s: src/renderModification.c.s
 
 # target to generate assembly for a file
 src/renderModification.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/renderModification.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/renderModification.c.s
 .PHONY : src/renderModification.c.s
 
 src/sdlRelated.o: src/sdlRelated.c.o
@@ -315,7 +328,7 @@ src/sdlRelated.o: src/sdlRelated.c.o
 
 # target to build an object file
 src/sdlRelated.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/sdlRelated.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/sdlRelated.c.o
 .PHONY : src/sdlRelated.c.o
 
 src/sdlRelated.i: src/sdlRelated.c.i
@@ -323,7 +336,7 @@ src/sdlRelated.i: src/sdlRelated.c.i
 
 # target to preprocess a source file
 src/sdlRelated.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/sdlRelated.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/sdlRelated.c.i
 .PHONY : src/sdlRelated.c.i
 
 src/sdlRelated.s: src/sdlRelated.c.s
@@ -331,7 +344,7 @@ src/sdlRelated.s: src/sdlRelated.c.s
 
 # target to generate assembly for a file
 src/sdlRelated.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_sdl_program.dir/build.make CMakeFiles/my_sdl_program.dir/src/sdlRelated.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pyDrawExec.dir/build.make CMakeFiles/pyDrawExec.dir/src/sdlRelated.c.s
 .PHONY : src/sdlRelated.c.s
 
 # Help Target
@@ -342,8 +355,9 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... clean_run"
-	@echo "... my_sdl_program"
+	@echo "... cleaning"
+	@echo "... run"
+	@echo "... pyDrawExec"
 	@echo "... src/fill.o"
 	@echo "... src/fill.i"
 	@echo "... src/fill.s"

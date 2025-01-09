@@ -4,7 +4,7 @@
 #include "./pyDraw.h"
 
 void initMatrix();
-void clearMatrix(SDL_Color color);
+void clearMatrix(char *hex);
 
 
 #endif //PYDRAW_MATRIXMANIPULATION_H

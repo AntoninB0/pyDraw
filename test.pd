@@ -1,0 +1,55 @@
+width = 500;
+height = 500;
+
+pen p = cursor(width/2, height/2);  
+pen p1 = cursor(0, 0);  
+
+p1.walk(100); 
+goTo(200,0,p1);
+p1.rotation = 270;
+p1.walk(100); 
+
+goTo(200,200,p1);
+p1.rotation = 470;
+p1.walk(100);
+
+int x = width / 2 + 20;
+int y = height / 2;
+fillColor(x,y,"fafafa");
+
+cirleWrite(300, pen);
+fillColor(width/2,height/2,"f0f00f");
+p.rotation = 50;
+p.walk(100);
+
+p.rotation = p.rotation + 70;
+p.walk(100);
+
+repeat(x, x < , x++) {
+        p.angle = p.angle + 70;
+        p.size = i;
+        if (i==7){
+            pen = goTo((float)(width / 2),(float)(height / 2), pen);
+        }elseif (i==12){
+            pen.color = defineColor("00FFff");
+        }elseif (i==16) {
+            pen.penDown = 0;
+        }elseif (i==18) {
+            pen.penDown = 1;
+        }
+        pen = lineWrite(500, pen);
+    }fillColor((int)(WIDTH / 2 + 20), (int)(HEIGHT / 2), "00FF00");
+
+rotateArea((int)(WIDTH / 2 - 400), (int)(HEIGHT / 2), 400, 300, float2Rad(57));
+
+copyPaste((int)(WIDTH / 2 - 400), (int)(HEIGHT / 2), 400, 300, (int)(WIDTH / 2 + 400), (int)(HEIGHT / 2));
+
+translation((int)(WIDTH / 2 - 200), (int)(HEIGHT / 2 - 200), 400,200,100,20,2);
+translation((int) (WIDTH / 2 + 200), (int) (HEIGHT / 2 + 200), 400, 200, 100, 20, 10);
+translation((int) (WIDTH / 2 + 100), (int) (HEIGHT / 2 + 100), 400, 200, 100, 20, -5);
+
+WAIT
+clearMatrix("FF0000");
+WAIT
+clearMatrix("00FF00");
+clearMatrix("0000FF");

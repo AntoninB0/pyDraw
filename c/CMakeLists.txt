@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Nom du projet
-project(MySDLProject C)
+project(pyDraw++ C)
 
 # Standard C utilisé
 set(CMAKE_C_STANDARD 99)
@@ -16,7 +16,7 @@ set(LIB_DIR ${CMAKE_SOURCE_DIR}/libs)
 file(GLOB_RECURSE SRCS ${SRC_DIR}/*.c)
 
 # Création de l'exécutable
-add_executable(my_sdl_program ${SRCS})
+add_executable(pyDrawExec ${SRCS})
 
 # Inclure les headers depuis /libs
 include_directories(${LIB_DIR})
@@ -25,12 +25,15 @@ include_directories(${LIB_DIR})
 find_package(SDL2 REQUIRED)
 
 # Ajouter les chemins d'inclusion et lier les bibliothèques
-target_include_directories(my_sdl_program PRIVATE ${SDL2_INCLUDE_DIRS})
-target_link_libraries(my_sdl_program ${SDL2_LIBRARIES} m)
+target_include_directories(pyDrawExec PRIVATE ${SDL2_INCLUDE_DIRS})
+target_link_libraries(pyDrawExec ${SDL2_LIBRARIES} m)
 
 # Ajout d'un clean run
-add_custom_target(clean_run
+add_custom_target(cleaning
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/CMakeFiles
-    COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/my_sdl_program
+    COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/pyDrawExec
     COMMENT "Nettoyage complet du répertoire de build"
+)
+add_custom_target(run
+    ./pyDrawExec
 )

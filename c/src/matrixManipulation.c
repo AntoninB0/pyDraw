@@ -19,7 +19,8 @@ void initMatrix() {
 }
 
 
-void clearMatrix(SDL_Color color) {
+void clearMatrix(char *hex) {
+    SDL_Color color = defineColor(hex);
     for (int i = 0; i < WIDTH; i++) {
         for (int e = 0; e < HEIGHT; e++) {
             matrix[i][e].r = color.r;

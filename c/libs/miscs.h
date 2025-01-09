@@ -3,8 +3,9 @@
 
 #include "./pyDraw.h"
 
+SDL_Color hex2RGB(char *hex);
 int compareSDLColors(SDL_Color color1, SDL_Color color2);
-SDL_Color defineColor(int r, int g, int b, int a);
+SDL_Color defineColor(char *hexColor);
 int approxPosX(float x);
 int approxPosY(float y);
 POS approxPos(float x, float y);

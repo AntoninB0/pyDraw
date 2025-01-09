@@ -8,7 +8,7 @@ void push(Stack *stack, POS pos);
 POS pop(Stack *stack);
 bool isEmpty(Stack *stack);
 void freeStack(Stack *stack);
-
-void fillColor(int x, int y, SDL_Color color);
+void fill(int x, int y, SDL_Color color2Change, SDL_Color colorReplace);
+void fillColor(int x, int y, char * hex);
 
 #endif //PYDRAW_FILL_H

@@ -105,6 +105,7 @@ set(CMAKE_MAKEFILE_PRODUCTS
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
-  "CMakeFiles/my_sdl_program.dir/DependInfo.cmake"
-  "CMakeFiles/clean_run.dir/DependInfo.cmake"
+  "CMakeFiles/pyDrawExec.dir/DependInfo.cmake"
+  "CMakeFiles/cleaning.dir/DependInfo.cmake"
+  "CMakeFiles/run.dir/DependInfo.cmake"
   )
