@@ -749,6 +749,7 @@ def generate_c_code(ast, lst, current_line):
     for node in ast:
         print(f"Processing node at line {current_line}: {node['type']}")
         if current_line in lst:
+            print("la")
             c_code.append("WAIT;")
         if node["type"] == "var_decl":
             value,current_line = generate_c_code([node["value"]],lst,current_line) if isinstance(node["value"], dict) else node["value"], current_line
@@ -830,15 +831,33 @@ def read_file(filename):
 def write_file(filename, content):
     with open(filename, "w", encoding="utf-8") as f:
         f.write(content)
-import sys
+import sys, ast as at
 # Main function to execute the compiler process
-def main(input_file, output_file):
-    lst = []  # Default to an empty list if no arguments are provided
-
-    if len(sys.argv) > 1:
+def main(output_file):
+    """lst = []  # Default to an empty list if no arguments are provided
+    input_file = sys.argv[1]
+    if len(sys.argv) > 2:
         # Assuming the list of lines is passed as a comma-separated string
         lst = list(map(int, sys.argv[1].split(',')))  # Parse it into a list of integers
-    print(lst)
+    print(lst)"""
+    if len(sys.argv) < 2:
+        print("Usage: python main.py <input_file> [line_numbers]")
+        return
+
+    input_file = sys.argv[1]  # Le premier argument est le chemin du fichier d'entrée
+    output_file = "../../c/src/main.c"  # Chemin du fichier de sortie défini dans le code
+    lst = []  # Liste pour stocker les numéros de ligne
+
+    # Vérifie si un deuxième argument est fourni et traite cela comme une liste de numéros de ligne
+    if len(sys.argv) > 2:
+        try:
+            # Convertit la chaîne en une liste d'entiers
+            lst = at.literal_eval(sys.argv[2])
+            if not isinstance(lst, list) or not all(isinstance(n, int) for n in lst):
+                raise ValueError("The second argument must be a list of integers.")
+        except (SyntaxError, ValueError) as e:
+            print(f"Error parsing line numbers: {e}")
+            return
     try:
         pydraw_code = read_file(input_file)
         tokens = tokenize(pydraw_code)
@@ -857,8 +876,8 @@ def main(input_file, output_file):
         return {e.line: e.message}
     except Exception as e:
         # Other exceptions are logged as errors
-        #print(e)
+        print(e)
         return {"General error":e}
 
 if __name__ == "__main__":
-    main("test.txt", "../../c/src/main.c")
+    main("../../c/src/main.c")
