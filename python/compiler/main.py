@@ -222,12 +222,11 @@ class Parser:
 
         params = []
         if self.tokens[self.current][1] != ")":
-            lst1 = self.parse_expression()
+            lst1 = self.parse_expression_condition()
             params.append(lst1[0])
             while self.tokens[self.current][1] == ",":
-
                 self.consume("SYMBOL")
-                lst = self.parse_expression()
+                lst = self.parse_expression_condition()
                 params.append(lst[0])
 
         self.consume("SYMBOL")  # ')'
@@ -282,27 +281,18 @@ class Parser:
 
         # Vérifier que le premier token n'est pas ')' pour gérer les fonctions sans arguments
         
-        if self._current_token()[1] != ")":
-            while True:
-                # Parse l'expression pour chaque argument et l'ajouter à la liste
-
-                arg_expr, arg_type = self.parse_args()
-                
-                
-                arg_type = self.find_variable_type(arg_expr)
-                
-                actual_args.append((arg_expr, arg_type))
-                
-                # Vérifier le token actuel après la lecture de l'argument
-                if self._current_token()[1] == ",":
-                    self.consume("SYMBOL")  # Consommer ','
-                elif self._current_token()[1] == ")":
-                    break
-                else:
-                    raise SyntaxErrorWithLine(self.get_line(), "Expected ',' or ')' in function call")
+        params = []
+        if self.tokens[self.current][1] != ")":
+            lst1 = self.parse_expression_condition()
+            params.append(lst1)
+            while self.tokens[self.current][1] == ",":
+                self.consume("SYMBOL")
+                lst = self.parse_expression_condition()
+                print(lst)
+                params.append(lst)
         self.consume("SYMBOL")  # Consommer ')'
 
-        # Vérifier le nombre d'arguments
+        """# Vérifier le nombre d'arguments
         if len(param_types) != len(actual_args):
             raise SyntaxErrorWithLine(self.get_line(), f"Function '{func_name}' expects {len(param_types)} arguments, got {len(actual_args)}.")
 
@@ -311,8 +301,8 @@ class Parser:
         for (expected_type, _), (actual_arg, actual_type) in zip(param_types, actual_args):
             if expected_type != actual_type:
                 raise SyntaxErrorWithLine(self.get_line(), f"Type mismatch for function '{func_name}': expected {expected_type}, got {actual_type}")
-        
-        return {"type": "function_call", "name": func_name, "args": actual_args}
+        """
+        return {"type": "function_call", "name": func_name, "args": params}
 
     def parse_args(self):
         """
@@ -528,10 +518,13 @@ class Parser:
         """
         Parse an expression, including binary operations (e.g., 'num * num').
         """
-        left = self.parse_term_condition()  # Parse the first operand or term
+        print("----------")
         
+        left = self.parse_term_condition()  # Parse the first operand or term
+        print(left)
         while self.current < len(self.tokens):
             token_type, token_value, token_line = self.tokens[self.current]
+            
             # Check for an operator
             if token_type == "OPERATOR":
                 operator = self.consume("OPERATOR")
@@ -544,10 +537,10 @@ class Parser:
                     operator = " or "
                     
                 left = f"{left} {operator} {right}"  # Combine into a valid expression
-             
+
             else:
                 break
-        
+        print(left)
         return left
 
 
@@ -603,27 +596,29 @@ class Parser:
                 next_token_type, next_token_value, next_token_line = self.tokens[self.current+1] if (self.current+1) < len(self.tokens) else (None,None,None)
                 
                 if token_type == "IDENTIFIER":
-                    print("------------")
-                    print(token_value)
-                    print(next_token_value)
+                   
                     if next_token_value == "(":
                         if self.is_function_declared(token_value) :
                             
                             func = self.parse_function_call(token_value)
+                            token_type, token_value, token_line = self._current_token()
+                            print("--------------")
                             return_type, params =self.functions[func["name"]]
-                            self.current += 1
-                            if type != expected_type :
-                                SyntaxErrorWithLine(token_line, f"Wrong return function type '{func["name"]}'")
-                            
+                            print(return_type)
+                            print(expected_type)
+                            if return_type != expected_type :
+                                raise SyntaxErrorWithLine(token_line, f"Wrong return function type '{func["name"]}'")
+                            print(func["args"])
                             if self.tokens[self.current][1] == ";": 
-                                func_call = func["name"] + "(" + ", ".join(map(str, params)) + ")"
+                                func_call = func["name"] + "(" + ", ".join(map(str, (func["args"]))) + ")"
                                 expr_value += func_call
+                                
                                 return expr_value, return_type
                             else :
-                                func_call = func["name"] + "(" + ", ".join(map(str, params)) + ")"
+                                func_call = func["name"] + "(" + ", ".join(map(str, (func["args"]))) + ")"
                                 expr_value += func_call
                         else :
-                            SyntaxErrorWithLine(token_line, f"Undefined function '{token_value}'")
+                            raise SyntaxErrorWithLine(token_line, f"Undefined function '{token_value}'")
                     elif next_token_type == "OPERATOR" or next_token_type == "SYMBOL":
                         if not self.is_variable_declared(token_value) :
                             raise SyntaxErrorWithLine(token_line, f"Undefined variable '{token_value}'")
