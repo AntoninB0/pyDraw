@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import platform  
-import main
+import compiler.main as main
        
 
 class TextEditor:
@@ -360,7 +360,7 @@ class TextEditor:
         print("/////////////////", file_path)
         if file_path :
             if file_path != "doc.txt":
-                result = main.main(file_path,"output.c",on_lines)   
+                result = main.main(file_path,"main.c",on_lines)   
                 if result != None :
                     for key in result:
                         liste_key.append(key)
