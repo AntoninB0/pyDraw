@@ -833,13 +833,17 @@ def write_file(filename, content):
         f.write(content)
 import sys, ast as at
 # Main function to execute the compiler process
-def main(output_file):
+def main(input_file, line_numbers=None):
+    output_file = "../../c/src/main.c"  # Chemin du fichier de sortie défini dans le code
+    lst = line_numbers if line_numbers else []  # Utiliser les numéros de ligne fournis ou une liste vide
+
     """lst = []  # Default to an empty list if no arguments are provided
     input_file = sys.argv[1]
     if len(sys.argv) > 2:
         # Assuming the list of lines is passed as a comma-separated string
-        lst = list(map(int, sys.argv[1].split(',')))  # Parse it into a list of integers
-    print(lst)"""
+        lst = list(map(int, sys.argv[1].split(',')))  # Parse it into a list of integers"""
+
+    """
     if len(sys.argv) < 2:
         print("Usage: python main.py <input_file> [line_numbers]")
         return
@@ -857,7 +861,7 @@ def main(output_file):
                 raise ValueError("The second argument must be a list of integers.")
         except (SyntaxError, ValueError) as e:
             print(f"Error parsing line numbers: {e}")
-            return
+            return"""
     try:
         pydraw_code = read_file(input_file)
         tokens = tokenize(pydraw_code)
@@ -879,5 +883,23 @@ def main(output_file):
         print(e)
         return {"General error":e}
 
+"""if __name__ == "__main__":
+    main("test_txt","../../c/src/main.c")"""
+# L'utilisation typique en dehors de ce fichier pourrait ressembler à ceci:
 if __name__ == "__main__":
-    main("../../c/src/main.c")
+    if len(sys.argv) > 1:
+        file_path = sys.argv[1]
+        line_nums = at.literal_eval(sys.argv[2]) if len(sys.argv) > 2 else None
+        main(file_path, line_nums)
+    else:
+        print("Usage: python main.py <input_file> [line_numbers]")
+
+
+"""# other_script.py
+import main
+
+# Appel de la fonction main avec le chemin du fichier et éventuellement des numéros de ligne
+input_file = "test.txt"
+line_numbers = [1, 2, 3]  # Les lignes où vous voulez que quelque chose de spécifique soit effectué
+
+main.main(input_file, line_numbers)"""
