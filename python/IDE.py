@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import platform  
-import compiler.main as main
+import main
        
 
 class TextEditor:
@@ -290,7 +290,6 @@ class TextEditor:
            
         # delete all underline on the ide
         text_widget.tag_remove("underline", "1.0", "end")
-        print("//////////////////", self.line_underlignes[file_path].items())
            
         # underlines 
         for line_num, underline in self.line_underlignes[file_path].items():
@@ -349,18 +348,19 @@ class TextEditor:
                 underlined_lines = [line_num for line_num, underline in self.line_underlignes[current_file].items() if underline]
                 self.run_action(on_lines)
       
-    def run_action(self,on_lines = []):
+    def run_action(self,on_lines_str = []):
         # take a current tab
+        on_lines = [int(x) for x in on_lines_str]
         self.save_file()
         current_tab_index = self.notebook.index(self.notebook.select())
         current_tab = self.open_files[current_tab_index]
         file_path = current_tab['file_path']
         text_widget = current_tab['text_widget']
         liste_key = []
-        print("/////////////////", file_path)
         if file_path :
             if file_path != "doc.txt":
-                result = main.main(file_path,"main.c",on_lines)   
+                result = main.main(file_path,on_lines)  
+                print(result)
                 if result != None :
                     for key in result:
                         liste_key.append(key)
@@ -374,12 +374,10 @@ class TextEditor:
                             self.terminal.insert(tk.END, "Compilation successful! C code has been generated in output.c \n")
                     for i in liste_key :
                         self.line_underlignes[file_path][key] = False
-                        print("//",self.line_underlignes[file_path].items())
                 else : 
                     self.terminal.insert(tk.END, "Compilation successful! C code has been generated in output.c \n")
                     for i in liste_key :
                         self.line_underlignes[file_path][key] = False
-                        print("//",self.line_underlignes[file_path].items())
                     self.update_underlignes(text_widget, file_path)
 
        
