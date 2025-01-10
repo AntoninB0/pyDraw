@@ -57,6 +57,7 @@ class Parser:
         self.functions = {}  
         self.functions_vars = {}  
         self.func_vars = 0
+        self.func_use = ""
 
     def find_variable_type(self, name):
         if self.func_vars :
@@ -113,7 +114,6 @@ class Parser:
             if name in self.variables:
                 raise SyntaxErrorWithLine(self.get_line(), f"Variable '{name}' already declared in this scope.")
             self.variables[name] = var_type
-            
 
     def get_line(self):
         """Get the current line number from the tokens."""
@@ -154,17 +154,15 @@ class Parser:
         next_token_type, next_token_value, _ = self.tokens[self.current]
         
         if next_token_value == ";":
-            
             self.consume("SYMBOL")  # Consume the semicolon, ending the declaration
             self.declare_variable(name, var_type)  # Declare without initializing
             return {"type": "var_decl", "var_type": var_type, "name": name, "value": None}
         
         elif next_token_value == "=":
             self.consume("OPERATOR")  # Consume the equals sign
-            value = self.parse_expression(var_type)
-            next_token_type, next_token_value, _ = self.tokens[self.current]
-            if next_token_value == ";":
-                self.consume("SYMBOL")  # Consume the semicolon
+            value, type = self.parse_term(var_type)
+            self.consume("SYMBOL")  # Consume the semicolon
+
             self.declare_variable(name, var_type)  # Declare and initialize
             return {"type": "var_decl", "var_type": var_type, "name": name, "value": value}
         else:
@@ -197,6 +195,7 @@ class Parser:
 
     def parse_number_or_variable(self):
         token_type, token_value, token_line = self.tokens[self.current]
+        
         if token_type == "NUMBER":
             self.consume("NUMBER")
             return token_value  # Return the number as is
@@ -264,9 +263,14 @@ class Parser:
         }
 
     # Parses function calls ensuring the function has been previously declared
-    def parse_function_call(self):
+    def parse_function_call(self,name=None):
         # Récupérer le nom de la fonction et vérifier qu'elle est bien déclarée
-        func_name = self.consume("IDENTIFIER")
+        if name is not None:
+            func_name = name
+            self.consume("IDENTIFIER")
+        else :
+            func_name = self.consume("IDENTIFIER")
+   
         if func_name not in self.functions:
             raise SyntaxErrorWithLine(self.get_line(), f"Function '{func_name}' is not declared.")
         self.consume("SYMBOL")  # Consommer '('
@@ -282,10 +286,11 @@ class Parser:
             while True:
                 # Parse l'expression pour chaque argument et l'ajouter à la liste
 
-                arg_expr, arg_type = self.parse_expression()
+                arg_expr, arg_type = self.parse_args()
                 
                 
                 arg_type = self.find_variable_type(arg_expr)
+                
                 actual_args.append((arg_expr, arg_type))
                 
                 # Vérifier le token actuel après la lecture de l'argument
@@ -301,13 +306,56 @@ class Parser:
         if len(param_types) != len(actual_args):
             raise SyntaxErrorWithLine(self.get_line(), f"Function '{func_name}' expects {len(param_types)} arguments, got {len(actual_args)}.")
 
-        # Vérifier le type de chaque argument NOT SUR ----------
+        # Vérifier le type de chaque argument ------------NOT SUR ----------
         
         for (expected_type, _), (actual_arg, actual_type) in zip(param_types, actual_args):
             if expected_type != actual_type:
                 raise SyntaxErrorWithLine(self.get_line(), f"Type mismatch for function '{func_name}': expected {expected_type}, got {actual_type}")
-
+        
         return {"type": "function_call", "name": func_name, "args": actual_args}
+
+    def parse_args(self):
+        """
+        Parses a single argument for a function call. This can be an identifier, a number, 
+        or a more complex expression. Assumes that arguments are separated by commas and
+        the list of arguments is terminated by a closing parenthesis.
+        """
+        token_type, token_value, token_line = self._current_token()
+
+        if token_type == "IDENTIFIER":
+            # Check if it's a function call
+            if self.peek_next_token() == "(":
+                # This is a function call within the arguments
+                self.consume("IDENTIFIER")  # Consume the function name
+                self.consume("SYMBOL")      # Consume the '('
+                return self.parse_function_call(token_value)  # token_value is the function name
+            else:
+                # It's a simple variable, consume it and check if declared
+                if not self.is_variable_declared(token_value):
+                    raise SyntaxErrorWithLine(token_line, f"Undefined variable '{token_value}'")
+                var_type = self.find_variable_type(token_value)
+                self.consume("IDENTIFIER")
+                return token_value, var_type
+
+        elif token_type == "NUMBER":
+            # Simply return the number and its type ('int' or 'float')
+            num_value = self.consume("NUMBER")
+            if '.' in num_value:
+                return num_value, "float"
+            else:
+                return num_value, "int"
+
+        else:
+            raise SyntaxErrorWithLine(token_line, f"Invalid argument type: {token_value}")
+
+    def peek_next_token(self):
+        """
+        Peeks at the next token without consuming it, to check what it is.
+        """
+        if self.current + 1 < len(self.tokens):
+            next_type, next_value, next_line = self.tokens[self.current + 1]
+            return next_value
+        return None
 
 
         # Here you should add code to check the types of actual_args against params
@@ -325,27 +373,26 @@ class Parser:
         params = []
 
         self.func_vars = 1
-
+        
         while self.tokens[self.current][1] != ")":
             param_type = self.consume("KEYWORD")
             param_name = self.consume("IDENTIFIER")
             params.append((param_type, param_name))
             if self.tokens[self.current][1] == ",":
                 self.consume("SYMBOL")
-
+        
         self.consume("SYMBOL")  # ')'
         self.consume("SYMBOL")  # '{'
         self.declare_function(name, return_type, params)
 
         body = [] 
 
-        
+        self.func_use = name
         while self.tokens[self.current][1] != "}":
-            body.append(self.parse_statement())
-            
+            body.append(self.parse_statement())  
         self.functions_vars = {}
         self.func_vars = 0
-
+        self.func_use = ""
         self.consume("SYMBOL")  # '}'
         self.functions[name] = (return_type, params)
         return {
@@ -518,111 +565,132 @@ class Parser:
 
 
     def parse_expression(self, expected_type=None):
-        token_type, token_value, token_line = self._current_token()
-        if self.is_function_declared(token_value):
-            self.parse_function_call()
-        else :
-            left_value, left_type = self.parse_term(expected_type)
-            #print(f"Initial Left: {left_value}, Type: {left_type}")
-            next_token_type, next_token_value, next_token_line = self.tokens[self.current+1] if (self.current+1) < len(self.tokens) else (None,None,None)
-            
-            while self.current < len(self.tokens):
-                token_type, token_value, token_line = self._current_token()
-                
-                #print(f"Current Token: {token_type}, Value: {token_value}, Line: {token_line}")
-                
-                if next_token_type == "OPERATOR":
-                    operator = self.consume("OPERATOR")
-                    #print(f"Operator: {operator}")
-
-                    right_value, right_type = self.parse_term()
-                    #print(f"Right: {right_value}, Type: {right_type}")
-
-                    # Type checking and result type determination
-                    if operator in ["+", "-", "*", "/", "<", ">"]:
-                        if left_type != right_type:
-                            raise SyntaxErrorWithLine(token_line, f"Type mismatch in expression: {left_type} and {right_type}")
-                        result_type = "float" if "float" in [left_type, right_type] else "int"
-
-                    elif operator in ["&", "|"]:
-                        if left_type != "bool" or right_type != "bool":
-                            raise SyntaxErrorWithLine(token_line, f"Logical operations require 'bool' types, got {left_type} and {right_type}")
-                        result_type = "bool"
-                    else:
-                        result_type = left_type  # Default to left type if operator not recognized
-
-                    left_value = f"({left_value} {operator} {right_value})"
-                    left_type = result_type
-                    #print(f"New Left: {left_value}, Type: {left_type}")
-                else :
-                    break
-
-            # Final type check against expected
-            if expected_type and left_type != expected_type:
-                raise SyntaxErrorWithLine(token_line, f"Expected expression of type {expected_type}, but got {left_type}")
-
-            return left_value, left_type
+        right_value, right_type = self.parse_term(expected_type)
+        return right_value, right_type
 
     # Parses terms within expressions, handling variables, numbers, and parenthesized expressions
     def parse_term(self, expected_type):
         token_type, token_value, token_line = self._current_token()
         next_token_type, next_token_value, next_token_line = self.tokens[self.current+1] if (self.current+1) < len(self.tokens) else (None,None,None)
         
-        if token_type == "IDENTIFIER" and next_token_type == "SYMBOL":
-            if not self.is_variable_declared(token_value):
-                raise SyntaxErrorWithLine(token_line, f"Undefined variable '{token_value}'")
-            variable_type = self.find_variable(token_value)
-            self.current += 1
-            return token_value, variable_type  # Ensure variable_type is a string, not a tuple
-        
-        elif (token_type == "IDENTIFIER" or token_type == "NUMBER") and next_token_type == "OPERATOR":
+        if (token_type == "IDENTIFIER" or token_type == "NUMBER") and next_token_value == ";":
+            if token_type == "IDENTIFIER":
+                if self.is_variable_declared(token_value):
+                    var_type = self.find_variable_type(token_value)
+                    if var_type != expected_type :
+                        raise SyntaxErrorWithLine(token_line, f"Wrong variable type '{token_value}'")
+                    self.consume("IDENTIFIER")
+                    return token_value, var_type
+                else :
+                    raise SyntaxErrorWithLine(token_line, f"Undefined variable '{token_value}'")
+            elif token_type == "NUMBER":
+                if '.' in token_value:
+                    name = self.parse_number_or_variable()
+                    if expected_type != "float" :
+                        raise SyntaxErrorWithLine(token_line, f"Wrong variable type '{token_value}'")
+                    return name, "float"
+                else:
+                    name = self.parse_number_or_variable()
+                    if expected_type != "int" :
+                        raise SyntaxErrorWithLine(token_line, f"Wrong variable type '{token_value}'")
+                    return name, "int"
+        elif (token_type == "IDENTIFIER" or token_type == "NUMBER") and (next_token_type == "OPERATOR" or next_token_value == "("):
             expr_value = ""
             while self.tokens[self.current][1] != ";":
+                
+                token_type, token_value, token_line = self._current_token()
+                
                 next_token_type, next_token_value, next_token_line = self.tokens[self.current+1] if (self.current+1) < len(self.tokens) else (None,None,None)
+                
                 if token_type == "IDENTIFIER":
-                    if self.is_function_declared(token_value) and next_token_value == "(":
-                        self.parse_function_call
-                    if self.func_vars :
-                        value_type = self.functions_vars[token_value]
-                    else :
-                        value_type = self.variables[token_value]
-                    if self.is_variable_declared(token_value) and value_type == expected_type and expected_type is not None:
-                        txt = self.consume("IDENTIFIER")
-                        expr_value += txt
-                    elif self.is_variable_declared(token_value):
-                        txt = self.consume("IDENTIFIER")
-                        expr_value += txt
-                    else :
-                        raise SyntaxErrorWithLine(token_line, f"Undeclared variable or wrong type '{token_value}'")
-                elif token_type == expected_type and expected_type is not None:
-                    txt = self.consume("NUMBER")
-                    expr_value += txt
+                    print("------------")
+                    print(token_value)
+                    print(next_token_value)
+                    if next_token_value == "(":
+                        if self.is_function_declared(token_value) :
+                            
+                            func = self.parse_function_call(token_value)
+                            return_type, params =self.functions[func["name"]]
+                            self.current += 1
+                            if type != expected_type :
+                                SyntaxErrorWithLine(token_line, f"Wrong return function type '{func["name"]}'")
+                            
+                            if self.tokens[self.current][1] == ";": 
+                                func_call = func["name"] + "(" + ", ".join(map(str, params)) + ")"
+                                expr_value += func_call
+                                return expr_value, return_type
+                            else :
+                                func_call = func["name"] + "(" + ", ".join(map(str, params)) + ")"
+                                expr_value += func_call
+                        else :
+                            SyntaxErrorWithLine(token_line, f"Undefined function '{token_value}'")
+                    elif next_token_type == "OPERATOR" or next_token_type == "SYMBOL":
+                        if not self.is_variable_declared(token_value) :
+                            raise SyntaxErrorWithLine(token_line, f"Undefined variable '{token_value}'")
+                        elif self.find_variable_type(token_value) != expected_type and expected_type is not None:
+                            raise SyntaxErrorWithLine(token_line, f"Wrong variable type '{token_value}'")
+                        else :
+                            txt = self.consume("IDENTIFIER")
+                            expr_value += txt
+                            
+                elif token_type == "NUMBER": # and expected_type is not None:               
+                    if '.' in token_value:
+                        name = self.parse_number_or_variable()
+                        if expected_type != "float" :
+                            raise SyntaxErrorWithLine(token_line, f"Wrong variable type '{token_value}'")
+                        expr_value += name
+                    else:
+                        name = self.parse_number_or_variable()
+                        if expected_type != "int" :
+                            raise SyntaxErrorWithLine(token_line, f"Wrong variable type '{token_value}'")
+                        expr_value += name
                 else :
                     raise SyntaxErrorWithLine(token_line, f"Incorrect variable type '{token_value}'")
                 
-                if self.tokens[self.current][1] != ";":
+                token_type, token_value, token_line = self._current_token()
+                
+                if self.tokens[self.current][1] == ";":
+                    break
+                else :
                     txt = self.consume("OPERATOR")
-                    expr_value += txt
-                """else :
-                    self.consume("SYMBOL")
-                    return expr_value,expected_type"""
-            self.consume("SYMBOL")
-            return expr_value,expected_type
-        elif token_type == "NUMBER":
-            self.current += 1
-            if '.' in token_value:
-                return token_value, "float"
-            else:
-                return token_value, "int"
-            
-        elif next_token_value == "(":
-            self.consume("SYMBOL")  # Consume '('
-            expr_value, expr_type = self.parse_expression(expected_type)  # No expected type passed
-            self.consume("SYMBOL")  # Consume ')'
-            return f"({expr_value})", expr_type
+                
+                expr_value += txt
+            return expr_value, expected_type
         else:
             raise SyntaxErrorWithLine(token_line, f"Unexpected token in term: {token_value}")
+    
+    """    def parse_expression(self, expected_type=None):
+            left_value, left_type = self.parse_term(expected_type)
+            while self.current < len(self.tokens) and self.tokens[self.current][1] in ["*", "/", "+", "-"]:
+                operator = self.consume("OPERATOR")
+                right_value, right_type = self.parse_term(expected_type)
+                if left_type != right_type:
+                    raise SyntaxErrorWithLine(self.get_line(), f"Type mismatch: {left_type} and {right_type}")
+                left_value = f"({left_value} {operator} {right_value})"
+            return left_value, left_type
+        def parse_term(self, expected_type):
+            token_type, token_value, token_line = self._current_token()
+            next_token_type, next_token_value, next_token_line = self.tokens[self.current+1] if (self.current+1) < len(self.tokens) else (None, None, None)
 
+            if token_type == "IDENTIFIER":
+                if not self.is_variable_declared(token_value):
+                    raise SyntaxErrorWithLine(token_line, f"Undefined variable '{token_value}'")
+                var_type = self.find_variable_type(token_value)
+                if var_type != expected_type:
+                    raise SyntaxErrorWithLine(token_line, f"Wrong variable type '{token_value}', expected {expected_type}, got {var_type}")
+                self.consume("IDENTIFIER")
+                return token_value, var_type
+
+            elif token_type == "NUMBER":
+                num_type = "float" if '.' in token_value else "int"
+                if num_type != expected_type:
+                    raise SyntaxErrorWithLine(token_line, f"Wrong number type, expected {expected_type}, got {num_type}")
+                self.consume("NUMBER")
+                return token_value, num_type
+
+            else:
+                raise SyntaxErrorWithLine(token_line, f"Unexpected token '{token_value}'")
+"""
     # Parses SDL function calls, treating them like any other function but ensuring proper argument handling
     def parse_sdl_function(self):
         func_name_type, func_name_val, func_line = self.tokens[self.current]
@@ -689,7 +757,12 @@ class Parser:
         
         elif token_type == "KEYWORD" and token_value == "return":
             self.consume("KEYWORD")
-            value = self.parse_expression()#ajout expected type a lire depuis la fonction
+            if self.func_vars :
+                return_type, params = self.functions[self.func_use]
+                value, type = self.parse_expression(return_type)#ajout expected type a lire depuis la fonction
+            else :
+                value, type = self.parse_expression()
+            self.consume("SYMBOL")
             if self.current < len(self.tokens) and self.tokens[self.current][1] == ";":
                 self.consume("SYMBOL")  
             return {"type": "return", "value": value}
@@ -745,18 +818,17 @@ class Parser:
 # Function to generate C code from the parsed AST, handling various statement and expression types
 def generate_c_code(ast, lst, current_line):
     c_code = []
-    print(f"Starting generation at line {type(current_line)}")
+    #print(f"Starting generation at line {type(current_line)}")
     for node in ast:
-        print(f"Processing node at line {current_line}: {node['type']}")
+        #print(f"Processing node at line {current_line}: {node['type']}")
         if current_line in lst:
-            print("la")
             c_code.append("WAIT;")
         if node["type"] == "var_decl":
             value,current_line = generate_c_code([node["value"]],lst,current_line) if isinstance(node["value"], dict) else node["value"], current_line
             if value is None or value == "None":
                 c_code.append(f"{node['var_type']} {node['name']};")
             else:
-                c_code.append(f"{node['var_type']} {node['name']} = {value[0]};")
+                c_code.append(f"{node['var_type']} {node['name']} = {value};")
         elif node["type"] == "pen_decl":
             c_code.append(f"Pen {node['name']} = createPen({node['x']}, {node['y']});")
         elif node["type"] == "pen_method":
@@ -774,7 +846,7 @@ def generate_c_code(ast, lst, current_line):
             body_str, current_line = generate_c_code(node.get("body", []),lst,current_line)
             c_code.append(f"{node['return_type']} {node['name']}({params}) {{\n{body_str}\n}}")
         elif node["type"] == "return":
-            c_code.append(f"return {node['value'][0]};")
+            c_code.append(f"return {node['value']};")
         elif node["type"] == "assignment":
             left = node["left"]
             right = node["right"]
@@ -875,8 +947,8 @@ def main(input_file, line_numbers=None):
         print(f"Compilation successful! C code has been generated in {output_file}.")
     except SyntaxErrorWithLine as e:
         # If a syntax error is caught, it is printed and returned as a dictionary
-        #print(e.line)
-        #print(e.message)
+        print(e.line)
+        print(e.message)
         return {e.line: e.message}
     except Exception as e:
         # Other exceptions are logged as errors
