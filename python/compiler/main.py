@@ -59,7 +59,6 @@ class Parser:
         self.func_vars = 0
 
     def find_variable_type(self, name):
-        print(self.functions_vars)
         if self.func_vars :
             if name in self.functions_vars:
                 return self.functions_vars[name]
@@ -114,8 +113,7 @@ class Parser:
             if name in self.variables:
                 raise SyntaxErrorWithLine(self.get_line(), f"Variable '{name}' already declared in this scope.")
             self.variables[name] = var_type
-            print("lalalal")
-            print(self.variables)
+            
 
     def get_line(self):
         """Get the current line number from the tokens."""
@@ -126,8 +124,6 @@ class Parser:
         if name in self.functions:
             raise Exception(f"Function '{name}' is already declared.")
         self.functions[name] = (return_type, params)
-        print("rrrrrrrrrrrrrrrr")
-        print(self.functions[name])
         for param_type, param_name in params:
             self.declare_variable(param_name, param_type)
 
@@ -156,7 +152,6 @@ class Parser:
         name = self.consume("IDENTIFIER")   # Expect the variable name
         # Check if next token is a semicolon or an equals sign (for potential initialization)
         next_token_type, next_token_value, _ = self.tokens[self.current]
-        print(name)
         
         if next_token_value == ";":
             
@@ -574,7 +569,6 @@ class Parser:
         next_token_type, next_token_value, next_token_line = self.tokens[self.current+1] if (self.current+1) < len(self.tokens) else (None,None,None)
         
         if token_type == "IDENTIFIER" and next_token_type == "SYMBOL":
-            print(self.is_variable_declared(token_value))
             if not self.is_variable_declared(token_value):
                 raise SyntaxErrorWithLine(token_line, f"Undefined variable '{token_value}'")
             variable_type = self.find_variable(token_value)
@@ -586,6 +580,8 @@ class Parser:
             while self.tokens[self.current][1] != ";":
                 next_token_type, next_token_value, next_token_line = self.tokens[self.current+1] if (self.current+1) < len(self.tokens) else (None,None,None)
                 if token_type == "IDENTIFIER":
+                    if self.is_function_declared(token_value) and next_token_value == "(":
+                        self.parse_function_call
                     if self.func_vars :
                         value_type = self.functions_vars[token_value]
                     else :
@@ -607,9 +603,11 @@ class Parser:
                 if self.tokens[self.current][1] != ";":
                     txt = self.consume("OPERATOR")
                     expr_value += txt
-                else :
+                """else :
                     self.consume("SYMBOL")
-                    return expr_value,expected_type
+                    return expr_value,expected_type"""
+            self.consume("SYMBOL")
+            return expr_value,expected_type
         elif token_type == "NUMBER":
             self.current += 1
             if '.' in token_value:
@@ -652,6 +650,7 @@ class Parser:
         }
 
     # Parses any single statement within the code, dispatching to specific parsing functions based on the statement type
+    
     def parse_statement(self):
         token_type, token_value, token_line = self._current_token()
         next_token_type, next_token_value, next_token_line = self.tokens[self.current+1] if (self.current+1) < len(self.tokens) else (None,None,None)
@@ -741,16 +740,18 @@ class Parser:
         while self.current < len(self.tokens):
             statement = self.parse_statement()
             ast.append(statement)
-        print(ast)
-        print(self.variables)
         return ast
 
 # Function to generate C code from the parsed AST, handling various statement and expression types
-def generate_c_code(ast):
+def generate_c_code(ast, lst, current_line):
     c_code = []
+    print(f"Starting generation at line {type(current_line)}")
     for node in ast:
+        print(f"Processing node at line {current_line}: {node['type']}")
+        if current_line in lst:
+            c_code.append("WAIT;")
         if node["type"] == "var_decl":
-            value = generate_c_code([node["value"]]) if isinstance(node["value"], dict) else node["value"]
+            value,current_line = generate_c_code([node["value"]],lst,current_line) if isinstance(node["value"], dict) else node["value"], current_line
             if value is None or value == "None":
                 c_code.append(f"{node['var_type']} {node['name']};")
             else:
@@ -769,7 +770,7 @@ def generate_c_code(ast):
             c_code.append(f"{func_name}({args});")
         elif node["type"] == "function":
             params = ", ".join([f"{ptype} {pname}" for ptype, pname in node.get("params", [])])
-            body_str = generate_c_code(node.get("body", []))
+            body_str, current_line = generate_c_code(node.get("body", []),lst,current_line)
             c_code.append(f"{node['return_type']} {node['name']}({params}) {{\n{body_str}\n}}")
         elif node["type"] == "return":
             c_code.append(f"return {node['value'][0]};")
@@ -792,19 +793,19 @@ def generate_c_code(ast):
             condition = node["condition"]
             incr_var = node["increment_var"]
             incr_op = node["increment_op"]
-            body_str = generate_c_code(node["body"])
+            body_str, current_line = generate_c_code(node["body"],lst,current_line)
             c_code.append(f"for ({init}; {condition}; {incr_var}{incr_op}) {{\n{body_str}\n}}")
         elif node["type"] == "if":
             condition = node["condition"]
-            body_str = generate_c_code(node["body"])
+            body_str, current_line = generate_c_code(node["body"],lst,current_line)
             c_code.append(f"if ({condition}) {{\n{body_str}\n}}")
             if node.get("elseif"):
                 for elif_block in node["elseif"]:
                     elif_cond = elif_block["condition"]
-                    elif_body = generate_c_code(elif_block["body"])
+                    elif_body, current_line = generate_c_code(elif_block["body"],lst,current_line)
                     c_code.append(f"else if ({elif_cond}) {{\n{elif_body}\n}}")
             if node.get("else"):
-                else_body = generate_c_code(node["else"])
+                else_body, current_line = generate_c_code(node["else"],lst,current_line)
                 c_code.append(f"else {{\n{else_body}\n}}")
         elif node["type"] == "pen_attribute":
             c_code.append(f"{node['name']}.{node['attribute']} = {node['value']};")
@@ -817,8 +818,9 @@ def generate_c_code(ast):
                 c_code.append(f"{node['method']}({node['name']});")
         else:
             raise ValueError(f"Unknown AST node type: {node['type']}.")
-
-    return "\n".join(c_code)
+        current_line += 1
+        
+    return "\n".join(c_code), current_line
 
 # Functions to read from and write to files
 def read_file(filename):
@@ -828,9 +830,15 @@ def read_file(filename):
 def write_file(filename, content):
     with open(filename, "w", encoding="utf-8") as f:
         f.write(content)
-
+import sys
 # Main function to execute the compiler process
 def main(input_file, output_file):
+    lst = []  # Default to an empty list if no arguments are provided
+
+    if len(sys.argv) > 1:
+        # Assuming the list of lines is passed as a comma-separated string
+        lst = list(map(int, sys.argv[1].split(',')))  # Parse it into a list of integers
+    print(lst)
     try:
         pydraw_code = read_file(input_file)
         tokens = tokenize(pydraw_code)
@@ -838,18 +846,18 @@ def main(input_file, output_file):
         ast = parser.parse()
         header ='#include "../libs/pyDraw.h"\nint main(int argc, char* argv[]) {\ninitMatrix();\ninitSDL();\n'
         footer ='\ncloseEventSDL();\nreturn 0;\n}'
-        c_code = generate_c_code(ast)
+        c_code, line = generate_c_code(ast, lst, 1)
         c_code = header + c_code + footer
         write_file(output_file, c_code)
         print(f"Compilation successful! C code has been generated in {output_file}.")
     except SyntaxErrorWithLine as e:
         # If a syntax error is caught, it is printed and returned as a dictionary
-        print(e.line)
-        print(e.message)
+        #print(e.line)
+        #print(e.message)
         return {e.line: e.message}
     except Exception as e:
         # Other exceptions are logged as errors
-        print(e)
+        #print(e)
         return {"General error":e}
 
 if __name__ == "__main__":
