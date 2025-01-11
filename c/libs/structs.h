@@ -4,8 +4,8 @@
 #include "./consts.h"
 
 typedef struct PEN {
-    int size, penDown;
-    float x, y, angle;
+    int thickness, penDown;
+    float x, y, rotation;
     SDL_Color color;
 } PEN;
 

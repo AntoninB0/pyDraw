@@ -3,11 +3,11 @@
 
 PEN initPen() {
     PEN pen;
-    pen.size = 1;
+    pen.thickness = 1;
     pen.penDown = 1;
     pen.x = (float)(WIDTH / 2);
     pen.y = (float)(HEIGHT / 2);
-    pen.angle = 0;
+    pen.rotation = 0;
     pen.color.r = DEFAULTCOLOR_PEN_R;
     pen.color.g = DEFAULTCOLOR_PEN_G;
     pen.color.b = DEFAULTCOLOR_PEN_B;
@@ -22,16 +22,16 @@ PEN createPen(int x,int y){
 }
 
 
-PEN goTo(int x, int y, PEN pen){
+PEN goTo(PEN pen,int x, int y){
     pen.x = x;
     pen.y = y;
     return pen;
 }
 
-PEN lineWrite(int length, PEN pen) {
+PEN walk(PEN pen,int length)  {
     float startX = pen.x;
     float startY = pen.y;
-    float angle_rad = float2Rad(pen.angle);
+    float angle_rad = float2Rad(pen.rotation);
     float cos_angle = cosf(angle_rad);
     float sin_angle = sinf(angle_rad);
 
@@ -39,10 +39,10 @@ PEN lineWrite(int length, PEN pen) {
     float endY = startY - length * sin_angle;
 
     // Calculer la boîte englobante de la ligne, y compris les extrémités arrondies
-    int minX = fminf(startX, endX) - pen.size;
-    int maxX = fmaxf(startX, endX) + pen.size;
-    int minY = fminf(startY, endY) - pen.size;
-    int maxY = fmaxf(startY, endY) + pen.size;
+    int minX = fminf(startX, endX) - pen.thickness;
+    int maxX = fmaxf(startX, endX) + pen.thickness;
+    int minY = fminf(startY, endY) - pen.thickness;
+    int maxY = fmaxf(startY, endY) + pen.thickness;
 
     // Assurer que nous restons dans les limites de l'image
     minX = fmaxf(minX, 0);
@@ -51,7 +51,7 @@ PEN lineWrite(int length, PEN pen) {
     maxY = fminf(maxY, HEIGHT - 1);
 
     float lineLength = sqrtf((endX - startX) * (endX - startX) + (endY - startY) * (endY - startY));
-    float halfPenSize = pen.size / 2.0f;
+    float halfPenSize = pen.thickness / 2.0f;
 
     for (int y = minY; y <= maxY; y++) {
         for (int x = minX; x <= maxX; x++) {

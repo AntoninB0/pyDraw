@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import platform  
-import main
+import compiler.main as main
        
 
 class TextEditor:

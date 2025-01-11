@@ -48,7 +48,7 @@ SDL_Color defineColor(char *hexColor){
         color.b = 0;
         color.a = 0;
     }
-
+    return color;
     
 }
 

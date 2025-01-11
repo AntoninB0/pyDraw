@@ -1,15 +1,14 @@
 #include "../libs/renderModification.h"
 
 
-
-void cirleWrite(int radius, PEN pen) {
+void circle(PEN pen,int radius){
     int centerX = approxPosX(pen.x);
     int centerY = approxPosY(pen.y);
 
-    float innerRadiusSquared = (radius - pen.size/2.0f) * (radius - pen.size/2.0f);
-    float outerRadiusSquared = (radius + pen.size/2.0f) * (radius + pen.size/2.0f);
+    float innerRadiusSquared = (radius - pen.thickness/2.0f) * (radius - pen.thickness/2.0f);
+    float outerRadiusSquared = (radius + pen.thickness/2.0f) * (radius + pen.thickness/2.0f);
 
-    int drawRadius = radius + pen.size/2;
+    int drawRadius = radius + pen.thickness/2;
 
     for (int y = -drawRadius; y <= drawRadius; y++) {
         for (int x = -drawRadius; x <= drawRadius; x++) {
@@ -33,7 +32,10 @@ void cirleWrite(int radius, PEN pen) {
 
 
 
-void rotateArea(int x, int y, int width, int height, float angle) {
+void rotateArea(int x, int y, int width, int height, float rotation) {
+
+    rotation = float2Rad(rotation);
+
     int maxDimension = (int)ceil(sqrt(width * width + height * height));
     int offsetX = (maxDimension - width) / 2;
     int offsetY = (maxDimension - height) / 2;
@@ -48,8 +50,8 @@ void rotateArea(int x, int y, int width, int height, float angle) {
 
     float centerX = (float)width / 2.0f;
     float centerY = (float)height / 2.0f;
-    float cosAngle = cos(-angle);
-    float sinAngle = sin(-angle);
+    float cosAngle = cos(-rotation);
+    float sinAngle = sin(-rotation);
 
     for (int destX = 0; destX < maxDimension; destX++) {
         for (int destY = 0; destY < maxDimension; destY++) {
@@ -170,10 +172,10 @@ void cut(int x, int y, int width, int height, int x1, int y1) {
     renderMatrix();
 }
 
-void translation(int x, int y, int width, int height, int length, float angle, int precision){
+void translation(int x, int y, int width, int height, int length, float rotation, int precision){
     if (precision == 0) precision = 1;
 
-    float angle_rad = float2Rad(angle);
+    float angle_rad = float2Rad(rotation);
     float cos_angle = cosf(angle_rad);
     float sin_angle = sinf(angle_rad);
 

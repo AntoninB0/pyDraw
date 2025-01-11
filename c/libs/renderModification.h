@@ -4,7 +4,7 @@
 #include "./consts.h"
 #include "./miscs.h"
 
-void cirleWrite(int radius, PEN pen);
+void circle(PEN pen,int radius);
 void rotateArea(int x, int y, int width, int height, float angle);
 void copyPaste(int x, int y, int width, int height, int x1, int y1);
 void copy(int x, int y, int width, int height);

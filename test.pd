@@ -1,58 +1,80 @@
-width = 500;
-height = 500;
+int width = 500;
+int height = 500;
 
-pen p = cursor(width/2, height/2);  
+pen p = cursor(width, height);  
 pen p1 = cursor(0, 0);  
 
 p1.walk(100); 
-goTo(200,0,p1);
+p1.goTo(200,0);
 p1.rotation = 270;
 p1.walk(100); 
 
-goTo(200,200,p1);
+p1.goTo(200,200);
 p1.rotation = 470;
 p1.walk(100);
 
-int x = width / 2 + 20;
-int y = height / 2;
-fillColor(x,y,"fafafa");
 
-cirleWrite(300, pen);
-fillColor(width/2,height/2,"f0f00f");
+int y = height / 2;
+//.*fillColor(300,200,"fafafa");
+
+p.circle(300);
+//.*fillColor(width/2,height/2,"f0f00f");
 p.rotation = 50;
 p.walk(100);
 
-p.rotation = p.rotation + 70;
+p.rotation = 150;
+//.*p.rotation = p.rotation + 70; ca ne marche pas
 p.walk(100);
 
-repeat(x, x < , x++) {
-        p.angle = p.angle + 70;
-        p.size = i;
-        if (i==7){
-            pen = goTo((float)(width / 2),(float)(height / 2), pen);
-        }elseif (i==12){
-            pen.color = defineColor("00FFff");
-        }elseif (i==16) {
-            pen.penDown = 0;
-        }elseif (i==18) {
-            pen.penDown = 1;
+int x = 0;
+int z = 0;
+repeat( x, x < 20, x++) {
+	//.*z = p.rotation; le p.qqch pose problèmeet n'est pas reconnu en tant que valeur
+        //.*p.rotation =  x*70;
+        //.*p.thickness = x;	
+	p.rotation =70;	
+	p.thickness = 3;	
+        if (x==7){
+            p.goTo(width / 2,height / 2);
+        }elseif (x==12){
+            //.*p.color = defineColor("00FFff");
+        }elseif (x==16) {
+            //.*p.penDown = 0;
+        }elseif (x==18) {
+            //.*p.penDown = 1;
         }
-        pen = lineWrite(500, pen);
-    }fillColor((int)(WIDTH / 2 + 20), (int)(HEIGHT / 2), "00FF00");
+        p.walk(500);
+    }//.*fillColor(300, 200,"00FF00");
 
-rotateArea((int)(WIDTH / 2 - 400), (int)(HEIGHT / 2), 400, 300, float2Rad(57));
+rotateArea(100, 100, 400, 300, 57);
 
-copyPaste((int)(WIDTH / 2 - 400), (int)(HEIGHT / 2), 400, 300, (int)(WIDTH / 2 + 400), (int)(HEIGHT / 2));
+copyPaste(100, 100, 400, 300, 150,50);
 
-translation((int)(WIDTH / 2 - 200), (int)(HEIGHT / 2 - 200), 400,200,100,20,2);
-translation((int) (WIDTH / 2 + 200), (int) (HEIGHT / 2 + 200), 400, 200, 100, 20, 10);
-translation((int) (WIDTH / 2 + 100), (int) (HEIGHT / 2 + 100), 400, 200, 100, 20, -5);
+translation(100, 100, 400,200,100,20,2);
+//.*translation((WIDTH / 2 + 200), (HEIGHT / 2 + 200), 400, 200, 100, 20, 10);
+//.*translation(100,50, 400, 200, 100, 20, -5);
 
-WAIT
-clearMatrix("FF0000");
-WAIT
-clearMatrix("00FF00");
-clearMatrix("0000FF");
+
+//.*clearMatrix("FF0000");
+
+//.*clearMatrix("00FF00");
+//.*clearMatrix("0000FF");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
