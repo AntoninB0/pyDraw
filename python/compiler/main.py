@@ -891,7 +891,7 @@ def generate_c_code(ast, lst, current_line):
                 c_code.append(f"else {{\n{else_body}\n}}")
         elif node["type"] == "pen_attribute":
             if node['attribute'] == "color":
-                c_code.append(f"{node['name']}.{node['attribute']} = {node['value']["name"]}({node['value']["args"]});")
+                c_code.append(f"{node['name']}.{node['attribute']} = {node['value']["name"]}({node['value']["args"][0]});")
             else :
                 c_code.append(f"{node['name']}.{node['attribute']} = {node['value']};")
         elif node["type"] == "method_call":
@@ -921,7 +921,7 @@ def write_file(filename, content):
 import sys, ast as at
 # Main function to execute the compiler process
 def main(input_file, line_numbers=None):
-    output_file = "../../c/src/main.c"  # Chemin du fichier de sortie défini dans le code
+    output_file = "./c/src/main.c"  # Chemin du fichier de sortie défini dans le code
     lst = line_numbers if line_numbers else []  # Utiliser les numéros de ligne fournis ou une liste vide
     try:
         pydraw_code = read_file(input_file)

@@ -378,6 +378,7 @@ class TextEditor:
         liste_key = []
         on_lines_str = [line_num for line_num, state in self.line_states[file_path].items() if state]
         on_lines = [int(x) for x in on_lines_str]
+        print(on_lines)
         if file_path :
             if file_path != "doc.txt":
                 result = main.main(file_path,on_lines)  

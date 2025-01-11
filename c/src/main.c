@@ -4,6 +4,7 @@ initMatrix();
 initSDL();
 int width = 800;
 int height = 1080;
+WAIT
 PEN p = createPen(width, height);
 PEN p1 = createPen(0, 0);
 p1 = walk(p1,100);
@@ -31,9 +32,10 @@ if (x == 7) {
 p = goTo(p,width / 2, 600);
 }
 else if (x == 12) {
-
+p.color = defineColor("00FFFF");
 }
 else if (x == 16) {
+WAIT
 p.penDown = 0;
 }
 else if (x == 18) {
@@ -42,6 +44,9 @@ p.penDown = 1;
 p = walk(p,500);
 }
 fillColor(300, 200, "00FF00");
+WAIT
+copy(100, 100, 400, 300);
+paste(800, 600);
 rotateArea(100, 100, 400, 300, 57);
 copyPaste(100, 100, 400, 300, 150, 50);
 translation(100, 100, 400, 200, 100, 20, 2);

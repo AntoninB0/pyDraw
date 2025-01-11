@@ -17,6 +17,10 @@ p1.walk(100);
 
 int y = height / 2;
 fillColor(300,200,"0000ff");
+func int test(int a){
+	p.circle(a);
+}
+
 
 p.circle(300);
 fillColor(width/2,height/2,"f0f00f");
@@ -33,12 +37,12 @@ repeat( x, x < 20, x++) {
 	
         p.rotation =  x*70;
         p.thickness = x;	
-
+	test(x*10);
 	p.thickness = x;	
         if (x==7){
             p.goTo(width / 2,600);
         }elseif (x==12){
-            p.color = defineColor("00FFff");
+            p.color = defineColor("00FFFF");
         }elseif (x==16) {
             p.penDown = 0;
         }elseif (x==18) {
@@ -46,6 +50,9 @@ repeat( x, x < 20, x++) {
         }
         p.walk(500);
     }fillColor(300, 200,"00FF00");
+
+copy(100, 100, 400, 300);
+paste(800,600);
 
 rotateArea(100, 100, 400, 300, 57);
 
@@ -66,6 +73,20 @@ waitKey();
 
 clearMatrix("00FF00");
 //.*clearMatrix("0000FF");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
