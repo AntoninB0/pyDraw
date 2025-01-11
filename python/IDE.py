@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import platform  
 import compiler.main as main
+import subprocess
+import os
        
 
 class TextEditor:
@@ -347,7 +349,26 @@ class TextEditor:
                 on_lines = [line_num for line_num, state in self.line_states[current_file].items() if state]
                 underlined_lines = [line_num for line_num, underline in self.line_underlignes[current_file].items() if underline]
                 self.run_action(on_lines)
-      
+
+
+    def c_compiling(self):
+
+        start_dir = os.getcwd()+"/c"
+        
+        commands = [
+            ["make", "cleaning"],
+            ["make"],
+            ["./pyDrawExec"]
+        ]
+
+        for command in commands:
+            result = subprocess.run(command, text=True, capture_output=True, cwd=start_dir)
+            if result.returncode != 0:
+                print(f"Erreur avec la commande : {' '.join(command)}")
+                print(f"Sortie d'erreur : {result.stderr}")
+                break
+            print(f"Résultat : {result.stdout}")
+
     def run_action(self,on_lines_str = []):
         # take a current tab
         on_lines = [int(x) for x in on_lines_str]
@@ -371,15 +392,18 @@ class TextEditor:
                         if key !=0 :
                             self.terminal.insert(tk.END, f"LIGNE : {key}, ERROR : {result[key]}\n")
                         else : 
-                            self.terminal.insert(tk.END, "Compilation successful! C code has been generated in output.c \n")
+                            self.terminal.insert(tk.END, "Compilation successful! C code has been generated \n")
+                            self.c_compiling()
                     for i in liste_key :
                         self.line_underlignes[file_path][key] = False
                 else : 
-                    self.terminal.insert(tk.END, "Compilation successful! C code has been generated in output.c \n")
+                    self.terminal.insert(tk.END, "Compilation successful! C code has been generated \n")
+                    self.c_compiling()
                     for i in liste_key :
                         self.line_underlignes[file_path][key] = False
                     self.update_underlignes(text_widget, file_path)
 
+    
        
     def clear_terminal(self):
         self.terminal.delete('1.0', tk.END)
