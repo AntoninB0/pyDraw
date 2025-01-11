@@ -61,7 +61,7 @@ class TextEditor:
         self.notebook = ttk.Notebook(self.text_frame)
         self.notebook.pack(fill='both', expand=True)
         self.paned_window.add(self.text_frame, minsize=100)  # Taille minimale
-               
+        on_lines_str = []
         # initialise for each fenester many constant
         self.current_file = None
         self.open_files = []
@@ -189,7 +189,7 @@ class TextEditor:
         line_numbers.pack(side='left', fill='y')
            
         # collect all interactive action and react
-        text_widget.bind('<KeyRelease>', lambda event: self.update_line_numbers(text_widget, line_numbers))
+        text_widget.bind('<KeyRelease>', lambda event: self.update_line_numbers(text_widget, line_nurrent_filumbers))
         text_widget.bind('<Configure>', lambda event: self.update_line_numbers(text_widget, line_numbers))
         text_widget.bind('<MouseWheel>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
         text_widget.bind('<Button-4>', lambda event: self.on_mouse_wheel(event, text_widget, line_numbers))
@@ -346,9 +346,8 @@ class TextEditor:
         if current_file :
             if current_file != "doc.txt":
                 # find all lines with on click
-                on_lines = [line_num for line_num, state in self.line_states[current_file].items() if state]
                 underlined_lines = [line_num for line_num, underline in self.line_underlignes[current_file].items() if underline]
-                self.run_action(on_lines)
+                self.run_action()
 
 
     def c_compiling(self):
@@ -369,19 +368,19 @@ class TextEditor:
                 break
             print(f"Résultat : {result.stdout}")
 
-    def run_action(self,on_lines_str = []):
+    def run_action(self):
         # take a current tab
-        on_lines = [int(x) for x in on_lines_str]
         self.save_file()
         current_tab_index = self.notebook.index(self.notebook.select())
         current_tab = self.open_files[current_tab_index]
         file_path = current_tab['file_path']
         text_widget = current_tab['text_widget']
         liste_key = []
+        on_lines_str = [line_num for line_num, state in self.line_states[file_path].items() if state]
+        on_lines = [int(x) for x in on_lines_str]
         if file_path :
             if file_path != "doc.txt":
                 result = main.main(file_path,on_lines)  
-                print(result)
                 if result != None :
                     for key in result:
                         liste_key.append(key)
