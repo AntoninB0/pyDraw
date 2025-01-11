@@ -61,6 +61,7 @@ class Parser:
         self.func_use = ""
 
     def find_variable_type(self, name):
+        
         if self.func_vars :
             if name in self.functions_vars:
                 if self.functions_vars[name] == "pen":
@@ -69,7 +70,8 @@ class Parser:
             raise Exception(f"Variable '{name}' not declared.")
         else :
             if name in self.variables:
-                if self.functions_vars[name] == "pen":
+                
+                if self.variables[name] == "pen":
                     return "int"
                 return self.variables[name]
             raise Exception(f"Variable '{name}' not declared.")
@@ -167,7 +169,6 @@ class Parser:
             self.consume("OPERATOR")  # Consume the equals sign
             value, type = self.parse_term(var_type)
             self.consume("SYMBOL")  # Consume the semicolon
-
             self.declare_variable(name, var_type)  # Declare and initialize
             return {"type": "var_decl", "var_type": var_type, "name": name, "value": value}
         else:
@@ -212,7 +213,6 @@ class Parser:
             var_name = self.consume("IDENTIFIER")
             if var_name not in self.variables or self.variables[var_name] not in ["int", "float","pen"]:
                 raise SyntaxErrorWithLine(token_line, f"Variable '{var_name}' is not declared as a numeric type")
-            print(var_name)
             return var_name, self.variables[var_name] # Return the variable name
         else:
             raise SyntaxErrorWithLine(token_line, f"Expected a number or variable, got '{token_value}'")
@@ -241,7 +241,20 @@ class Parser:
         self.consume("SYMBOL")  # ')'
         self.consume("SYMBOL")  # ';'
         return {"type": "method_call", "name": pen_name, "method": method, "params": params}
+    def parse_pen_call(self, pen_name) :
+        token_type, token_value, token_line = self.tokens[self.current]
+        if pen_name not in self.variables:
+            raise SyntaxErrorWithLine(token_line, f"Variable '{pen_name}' is not declared")
+        if self.variables[pen_name] != "pen":
+            raise SyntaxErrorWithLine(token_line, f"Variable '{pen_name}' is not a pen")
 
+        self.consume("SYMBOL")  # '.'
+        attribute = self.consume("PEN_ATTRIBUTE")
+        return {
+            "type": "pen_attribute",
+            "name": pen_name,
+            "attribute": attribute
+        }
     # Parses attribute assignments for 'pen' objects
     def parse_pen_attribute(self, pen_name):
         
@@ -261,7 +274,7 @@ class Parser:
         if attribute in ["rotation","penDown","positionY", "positionX","thickness"]:
             
             if next_token_type == "OPERATOR" or next3_token_type == "OPERATOR" :
-                value = self.parse_expression_condition()
+                value, type = self.parse_expression("int")
             else :
                 value, type = self.parse_number_or_variable()
                 
@@ -270,8 +283,9 @@ class Parser:
             value = self.consume("STRING")
         else:
             raise SyntaxErrorWithLine(token_line, f"Variable '{attribute}' is not a valid pen attribute")
-
+        
         self.consume("SYMBOL")  # ';'
+        
         return {
             "type": "pen_attribute",
             "name": pen_name,
@@ -423,10 +437,11 @@ class Parser:
 
         self.consume("SYMBOL")  
         body = []
+        
         while self.tokens[self.current][1] != "}":
             body.append(self.parse_statement())
         self.consume("SYMBOL")
-
+        
         return {
             "type": "repeat",
             "init": init,
@@ -520,8 +535,8 @@ class Parser:
         
         var_name = self.consume("IDENTIFIER")
         self.consume("OPERATOR")  # Consume the '=' symbol
-        
-        value = self.parse_expression()  # Parse the expression to assign
+        var_type = self.find_variable_type(var_name)
+        value = self.parse_expression(var_type)  # Parse the expression to assign
         self.consume("SYMBOL")  # Consume the semicolon
 
         # Check if variable is declared
@@ -578,7 +593,7 @@ class Parser:
     def parse_term(self, expected_type):
         token_type, token_value, token_line = self._current_token()
         next_token_type, next_token_value, next_token_line = self.tokens[self.current+1] if (self.current+1) < len(self.tokens) else (None,None,None)
-        
+
         if (token_type == "IDENTIFIER" or token_type == "NUMBER") and next_token_value == ";":
             #self.parse_number_or_variable()
             if token_type == "IDENTIFIER":
@@ -601,7 +616,7 @@ class Parser:
                     if expected_type != "int" :
                         raise SyntaxErrorWithLine(token_line, f"Wrong variable type '{token_value}'")
                     return name, "int"
-        elif (token_type == "IDENTIFIER" or token_type == "NUMBER") and (next_token_type == "OPERATOR" or next_token_value == "("):
+        elif (token_type == "IDENTIFIER" or token_type == "NUMBER") and (next_token_type == "OPERATOR" or next_token_value == "(" or next_token_value == "."):
             expr_value = ""
             while self.tokens[self.current][1] != ";":
                 
@@ -610,7 +625,6 @@ class Parser:
                 next_token_type, next_token_value, next_token_line = self.tokens[self.current+1] if (self.current+1) < len(self.tokens) else (None,None,None)
                 
                 if token_type == "IDENTIFIER":
-                   
                     if next_token_value == "(":
                         if self.is_function_declared(token_value) :
                             
@@ -632,17 +646,24 @@ class Parser:
                                 expr_value += func_call
                         else :
                             raise SyntaxErrorWithLine(token_line, f"Undefined function '{token_value}'")
+                    elif next_token_value == ".":
+                        pen = self.consume("IDENTIFIER")
+                        value = self.parse_pen_call(pen)
+                        expr_value += value["name"] + "." + value["attribute"]
+                        token_type, token_value, token_line = self._current_token()
                     elif next_token_type == "OPERATOR" or next_token_type == "SYMBOL":
                         if not self.is_variable_declared(token_value) :
                             raise SyntaxErrorWithLine(token_line, f"Undefined variable '{token_value}'")
                         elif self.find_variable_type(token_value) != expected_type and expected_type is not None:
                             raise SyntaxErrorWithLine(token_line, f"Wrong variable type '{token_value}'")
                         else :
+                            
                             txt = self.consume("IDENTIFIER")
                             expr_value += txt
-                            
-                elif token_type == "NUMBER": # and expected_type is not None:               
+                    
+                elif token_type == "NUMBER": # and expected_type is not None: 
                     if '.' in token_value:
+                        
                         name, type = self.parse_number_or_variable()
                         if expected_type != "float" :
                             raise SyntaxErrorWithLine(token_line, f"Wrong variable type '{token_value}'")
@@ -656,7 +677,6 @@ class Parser:
                     raise SyntaxErrorWithLine(token_line, f"Incorrect variable type '{token_value}'")
                 
                 token_type, token_value, token_line = self._current_token()
-                
                 if self.tokens[self.current][1] == ";":
                     break
                 else :
@@ -745,6 +765,7 @@ class Parser:
         elif token_type == "IDENTIFIER" and next_token_type == "SYMBOL" and next_token_value == ".":
             pen_name_t, pen_name_val, pen_name_line = self.tokens[self.current]
             self.current += 1  # consume the identifier
+            
             if pen_name_val not in self.variables:
                 raise SyntaxErrorWithLine(pen_name_line, f"Pen '{pen_name_val}' not declared.")
             # Peek at the next token
@@ -858,7 +879,7 @@ def generate_c_code(ast, lst, current_line):
         elif node["type"] == "assignment":
             left = node["left"]
             right = node["right"]
-            c_code.append(f"{left} = {right};")
+            c_code.append(f"{left} = {right[0]};")
         elif node["type"] == "methode":
             methode = node["methode"]
             if methode == "wait":
@@ -895,8 +916,6 @@ def generate_c_code(ast, lst, current_line):
             params = ", ".join(map(str, node["params"]))
             
             if len(node["params"]) > 0:
-                print("************")
-                print(params)
                 c_code.append(f"{node['method']}({node['name']},{params});")
             else:
                 c_code.append(f"{node['method']}({node['name']});")
