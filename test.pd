@@ -57,10 +57,12 @@ translation(100,50, 400, 200, 100, 20, -5);
 
 fillColor(500, 500,"FFFF00");
 
-//.*clearMatrix("FF0000");
+clearMatrix("FF0000");
 
 //.*clearMatrix("00FF00");
 //.*clearMatrix("0000FF");
+
+
 
 
 

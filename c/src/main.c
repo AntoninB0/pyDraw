@@ -46,6 +46,7 @@ translation(100, 100, 400, 200, 100, 20, 2);
 translation(width / 2 + 200, height / 2 + 200, 400, 200, 100, 20, 10);
 translation(100, 50, 400, 200, 100, 20, -5);
 fillColor(500, 500, "FFFF00");
+clearMatrix("FF0000");
 closeEventSDL();
 return 0;
 }
