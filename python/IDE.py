@@ -347,7 +347,7 @@ class TextEditor:
             if current_file != "doc.txt":
                 # find all lines with on click
                 underlined_lines = [line_num for line_num, underline in self.line_underlignes[current_file].items() if underline]
-                self.run_action()
+                self.run_action(1)
 
 
     def c_compiling(self):
@@ -368,7 +368,7 @@ class TextEditor:
                 break
             print(f"Résultat : {result.stdout}")
 
-    def run_action(self):
+    def run_action(self,debug = 0):
         # take a current tab
         self.save_file()
         current_tab_index = self.notebook.index(self.notebook.select())
@@ -376,8 +376,10 @@ class TextEditor:
         file_path = current_tab['file_path']
         text_widget = current_tab['text_widget']
         liste_key = []
-        on_lines_str = [line_num for line_num, state in self.line_states[file_path].items() if state]
-        on_lines = [int(x) for x in on_lines_str]
+        on_lines = []
+        if debug != 0:
+            on_lines_str = [line_num for line_num, state in self.line_states[file_path].items() if state]
+            on_lines = [int(x) for x in on_lines_str]
         if file_path :
             if file_path != "doc.txt":
                 result = main.main(file_path,on_lines)  
