@@ -19,7 +19,8 @@ int y = height / 2;
 fillColor(300,200,"0000ff");
 func int test(int a){
 	p.circle(a);
-}
+
+}	
 
 
 p.circle(300);
@@ -33,11 +34,15 @@ p.walk(100);
 
 int x = 0;
 
+int z = 0;
 repeat( x, x < 20, x++) {
 	
         p.rotation =  x*70;
         p.thickness = x;	
-	test(x*10);
+
+
+	z = test(x*10);
+
 	p.thickness = x;	
         if (x==7){
             p.goTo(width / 2,600);
@@ -73,6 +78,10 @@ waitKey();
 
 clearMatrix("00FF00");
 //.*clearMatrix("0000FF");
+
+
+
+
 
 
 
