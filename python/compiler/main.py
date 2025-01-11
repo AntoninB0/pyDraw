@@ -3,11 +3,10 @@ import re
 # Define token types for lexical analysis
 TOKENS = [
     ("COMMENT", r"//.*"),  # Single-line comments
-    ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|wait|skip|leave|break|return|cursor|walk|goTo|circle|fillColor|compareSDLColors|defineColor|approxPosX|approxPosY|approxPos|float2Rad|pixelColor|circleWrite|rotateArea|copyPaste|copy|paste|cut|translation|waitKey|closeEventSDL|renderMatrix|initSDL)\b"),  # Recognized keywords
+    ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|wait|skip|leave|break|return|cursor|walk|goTo|circle|fillColor|compareSDLColors|approxPosX|approxPosY|approxPos|float2Rad|pixelColor|circleWrite|clearMatrix|rotateArea|copyPaste|copy|paste|cut|translation|waitKey|closeEventSDL|renderMatrix|initSDL)\b"),  # Recognized keywords
     ("NUMBER", r"-?\b\d+(\.\d+)?\b"),  # Handles negative and positive, integer and decimal numbers
     ("OPERATOR", r"[=+\-*/><!&|]{1,2}"),  # Operators include arithmetic, logical, and comparison
     ("SYMBOL", r"[{}();,.]"),  # Punctuation symbols used for syntax
-    
     ("BOOL", r"\b(true|false)\b"),  # Boolean values
     ("STRING", r"\".*?\""),  # String literals enclosed in double quotes
     ("PEN_ATTRIBUTE", r"\b(color|thickness|positionX|positionY|rotation|penDown)\b"),  # Attributes specific to 'pen' objects
@@ -688,38 +687,6 @@ class Parser:
         else:
             raise SyntaxErrorWithLine(token_line, f"Unexpected token in term: {token_value}")
     
-    """    def parse_expression(self, expected_type=None):
-            left_value, left_type = self.parse_term(expected_type)
-            while self.current < len(self.tokens) and self.tokens[self.current][1] in ["*", "/", "+", "-"]:
-                operator = self.consume("OPERATOR")
-                right_value, right_type = self.parse_term(expected_type)
-                if left_type != right_type:
-                    raise SyntaxErrorWithLine(self.get_line(), f"Type mismatch: {left_type} and {right_type}")
-                left_value = f"({left_value} {operator} {right_value})"
-            return left_value, left_type
-        def parse_term(self, expected_type):
-            token_type, token_value, token_line = self._current_token()
-            next_token_type, next_token_value, next_token_line = self.tokens[self.current+1] if (self.current+1) < len(self.tokens) else (None, None, None)
-
-            if token_type == "IDENTIFIER":
-                if not self.is_variable_declared(token_value):
-                    raise SyntaxErrorWithLine(token_line, f"Undefined variable '{token_value}'")
-                var_type = self.find_variable_type(token_value)
-                if var_type != expected_type:
-                    raise SyntaxErrorWithLine(token_line, f"Wrong variable type '{token_value}', expected {expected_type}, got {var_type}")
-                self.consume("IDENTIFIER")
-                return token_value, var_type
-
-            elif token_type == "NUMBER":
-                num_type = "float" if '.' in token_value else "int"
-                if num_type != expected_type:
-                    raise SyntaxErrorWithLine(token_line, f"Wrong number type, expected {expected_type}, got {num_type}")
-                self.consume("NUMBER")
-                return token_value, num_type
-
-            else:
-                raise SyntaxErrorWithLine(token_line, f"Unexpected token '{token_value}'")
-"""
     # Parses SDL function calls, treating them like any other function but ensuring proper argument handling
     def parse_sdl_function(self):
         func_name_type, func_name_val, func_line = self.tokens[self.current]
@@ -847,7 +814,6 @@ class Parser:
             for param_type, param_name in params:
                 self.declare_variable(param_name, param_type)  # Déclare les paramètres comme variables locales si nécessaire
         
-        print(self.functions)
         #self.functions_vars = {}
         #self.func_vars = 0
         while self.current < len(self.tokens):
@@ -957,32 +923,6 @@ import sys, ast as at
 def main(input_file, line_numbers=None):
     output_file = "./c/src/main.c"  # Chemin du fichier de sortie défini dans le code
     lst = line_numbers if line_numbers else []  # Utiliser les numéros de ligne fournis ou une liste vide
-
-    """lst = []  # Default to an empty list if no arguments are provided
-    input_file = sys.argv[1]
-    if len(sys.argv) > 2:
-        # Assuming the list of lines is passed as a comma-separated string
-        lst = list(map(int, sys.argv[1].split(',')))  # Parse it into a list of integers"""
-
-    """
-    if len(sys.argv) < 2:
-        print("Usage: python main.py <input_file> [line_numbers]")
-        return
-
-    input_file = sys.argv[1]  # Le premier argument est le chemin du fichier d'entrée
-    output_file = "../../c/src/main.c"  # Chemin du fichier de sortie défini dans le code
-    lst = []  # Liste pour stocker les numéros de ligne
-
-    # Vérifie si un deuxième argument est fourni et traite cela comme une liste de numéros de ligne
-    if len(sys.argv) > 2:
-        try:
-            # Convertit la chaîne en une liste d'entiers
-            lst = at.literal_eval(sys.argv[2])
-            if not isinstance(lst, list) or not all(isinstance(n, int) for n in lst):
-                raise ValueError("The second argument must be a list of integers.")
-        except (SyntaxError, ValueError) as e:
-            print(f"Error parsing line numbers: {e}")
-            return"""
     try:
         pydraw_code = read_file(input_file)
         tokens = tokenize(pydraw_code)
@@ -1004,8 +944,7 @@ def main(input_file, line_numbers=None):
         print(e)
         return {"General error":e}
 
-"""if __name__ == "__main__":
-    main("test_txt","../../c/src/main.c")"""
+
 # L'utilisation typique en dehors de ce fichier pourrait ressembler à ceci:
 if __name__ == "__main__":
     if len(sys.argv) > 1:
