@@ -919,7 +919,7 @@ def generate_c_code(ast, lst, current_line):
             
             if len(node["params"]) > 0:
                 if node['method'] == "goTo" or node['method'] == "walk":
-                    c_code.append(f"{node['name']} = {node['method']}({params});")
+                    c_code.append(f"{node['name']} = {node['method']}({node['name']},{params});")
                 else :
                     c_code.append(f"{node['method']}({node['name']},{params});")
             else:

@@ -52,7 +52,7 @@ rotateArea(100, 100, 400, 300, 57);
 copyPaste(100, 100, 400, 300, 150,50);
 
 translation(100, 100, 400,200,100,20,2);
-//.*translation((WIDTH / 2 + 200), (HEIGHT / 2 + 200), 400, 200, 100, 20, 10);
+translation(width / 2 + 200, height / 2 + 200, 400, 200, 100, 20, 10);
 translation(100,50, 400, 200, 100, 20, -5);
 
 
@@ -60,6 +60,10 @@ translation(100,50, 400, 200, 100, 20, -5);
 
 //.*clearMatrix("00FF00");
 //.*clearMatrix("0000FF");
+
+
+
+
 
 
 
