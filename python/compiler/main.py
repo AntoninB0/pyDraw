@@ -3,7 +3,7 @@ import re
 # Define token types for lexical analysis
 TOKENS = [
     ("COMMENT", r"//.*"),  # Single-line comments
-    ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|wait|skip|leave|break|return|cursor|down|up|walk|goTo|jumpTo|rectangle|circle|triangleIso|rotateCW|rotateCCW|fillColor|initMatrix|clearMatrix|compareSDLColors|defineColor|approxPosX|approxPosY|approxPos|float2Rad|pixelColor|circleWrite|rotateArea|copyPaste|copy|paste|cut|translation|waitKey|closeEventSDL|renderMatrix|initSDL)\b"),  # Recognized keywords
+    ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|wait|skip|leave|break|return|cursor|walk|goTo|circle|fillColor|compareSDLColors|defineColor|approxPosX|approxPosY|approxPos|float2Rad|pixelColor|circleWrite|rotateArea|copyPaste|copy|paste|cut|translation|waitKey|closeEventSDL|renderMatrix|initSDL)\b"),  # Recognized keywords
     ("NUMBER", r"-?\b\d+(\.\d+)?\b"),  # Handles negative and positive, integer and decimal numbers
     ("OPERATOR", r"[=+\-*/><!&|]{1,2}"),  # Operators include arithmetic, logical, and comparison
     ("SYMBOL", r"[{}();,.]"),  # Punctuation symbols used for syntax
@@ -228,7 +228,6 @@ class Parser:
         self.consume("SYMBOL")  # '.'
         method = self.consume("KEYWORD")
         self.consume("SYMBOL")  # '('
-
         params = []
         if self.tokens[self.current][1] != ")":
             lst1 = self.parse_expression_condition()
@@ -851,7 +850,7 @@ def generate_c_code(ast, lst, current_line):
     for node in ast:
         #print(f"Processing node at line {current_line}: {node['type']}")
         if current_line in lst:
-            c_code.append("WAIT;")
+            c_code.append("WAIT")
         if node["type"] == "var_decl":
             value,current_line = generate_c_code([node["value"]],lst,current_line) if isinstance(node["value"], dict) else node["value"], current_line
             if value is None or value == "None":
@@ -859,8 +858,11 @@ def generate_c_code(ast, lst, current_line):
             else:
                 c_code.append(f"{node['var_type']} {node['name']} = {value};")
         elif node["type"] == "pen_decl":
+
             c_code.append(f"PEN {node['name']} = createPen({node['x']}, {node['y']});")
         elif node["type"] == "pen_method":
+            
+            
             params = ", ".join(map(str, node.get("params", [])))
             c_code.append(f"{node['name']}.{node['method']}({params});")
         elif node["type"] == "function_call":
@@ -916,7 +918,10 @@ def generate_c_code(ast, lst, current_line):
             params = ", ".join(map(str, node["params"]))
             
             if len(node["params"]) > 0:
-                c_code.append(f"{node['method']}({node['name']},{params});")
+                if node['method'] == "goTo" or node['method'] == "walk":
+                    c_code.append(f"{node['name']} = {node['method']}({params});")
+                else :
+                    c_code.append(f"{node['method']}({node['name']},{params});")
             else:
                 c_code.append(f"{node['method']}({node['name']});")
         else:
@@ -1005,3 +1010,14 @@ input_file = "test.txt"
 line_numbers = [1, 2, 3]  # Les lignes où vous voulez que quelque chose de spécifique soit effectué
 
 main.main(input_file, line_numbers)"""
+
+
+# L'utilisation typique en dehors de ce fichier pourrait ressembler à ceci:
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        file_path = sys.argv[1]
+        line_nums = at.literal_eval(sys.argv[2]) if len(sys.argv) > 2 else None
+        main(file_path, line_nums)
+    else:
+        print("Usage: python main.py <input_file> [line_numbers]")
+
