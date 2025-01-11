@@ -1,6 +1,6 @@
 
-int width = 500;
-int height = 500;
+int width = 800;
+int height = 1080;
 
 pen p = cursor(width, height);  
 pen p1 = cursor(0, 0);  
@@ -19,12 +19,12 @@ int y = height / 2;
 fillColor(300,200,"0000ff");
 
 p.circle(300);
-//.*fillColor(width/2,height/2,"f0f00f");
+fillColor(width/2,height/2,"f0f00f");
 p.rotation = 50;
 p.walk(100);
 
 p.rotation = 150;
-//.*p.rotation = p.rotation + 70; ca ne marche pas
+p.rotation = p.rotation + 70; 
 p.walk(100);
 
 int x = 0;
@@ -38,7 +38,7 @@ repeat( x, x < 20, x++) {
         if (x==7){
             p.goTo(width / 2,600);
         }elseif (x==12){
-            //.*p.color = defineColor("00FFff");
+            p.color = defineColor("00FFff");
         }elseif (x==16) {
             p.penDown = 0;
         }elseif (x==18) {
@@ -57,10 +57,21 @@ translation(100,50, 400, 200, 100, 20, -5);
 
 fillColor(500, 500,"FFFF00");
 
+
+waitKey();
+
 clearMatrix("FF0000");
 
-//.*clearMatrix("00FF00");
+waitKey();
+
+clearMatrix("00FF00");
 //.*clearMatrix("0000FF");
+
+
+
+
+
+
 
 
 

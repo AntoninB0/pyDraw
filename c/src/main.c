@@ -2,8 +2,8 @@
 int main(int argc, char* argv[]) {
 initMatrix();
 initSDL();
-int width = 500;
-int height = 500;
+int width = 800;
+int height = 1080;
 PEN p = createPen(width, height);
 PEN p1 = createPen(0, 0);
 p1 = walk(p1,100);
@@ -16,9 +16,11 @@ p1 = walk(p1,100);
 int y = height/2;
 fillColor(300, 200, "0000ff");
 circle(p,300);
+fillColor(width / 2, height / 2, "f0f00f");
 p.rotation = 50;
 p = walk(p,100);
 p.rotation = 150;
+p.rotation = p.rotation+70;
 p = walk(p,100);
 int x = 0;
 for (x; x < 20; x++) {
@@ -46,7 +48,10 @@ translation(100, 100, 400, 200, 100, 20, 2);
 translation(width / 2 + 200, height / 2 + 200, 400, 200, 100, 20, 10);
 translation(100, 50, 400, 200, 100, 20, -5);
 fillColor(500, 500, "FFFF00");
+waitKey();
 clearMatrix("FF0000");
+waitKey();
+clearMatrix("00FF00");
 closeEventSDL();
 return 0;
 }
