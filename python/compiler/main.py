@@ -13,7 +13,11 @@ TOKENS = [
     ("IDENTIFIER", r"\b[a-zA-Z_][a-zA-Z0-9_]*\b"),  # Identifiers (variable/function names)
     ("WHITESPACE", r"[ \t\n]+"),  # Whitespace characters (space, tab, newline)
 ]
+# Pattern pour identifier
+identifier_pattern = re.compile(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b")
 
+# Pattern pour number
+number_pattern = re.compile(r"-?\b\d+(\.\d+)?\b")
 def tokenize(code):
     tokens = []
     line_number = 1  # Starting line number
@@ -239,6 +243,7 @@ class Parser:
         self.consume("SYMBOL")  # ')'
         self.consume("SYMBOL")  # ';'
         return {"type": "method_call", "name": pen_name, "method": method, "params": params}
+    
     def parse_pen_call(self, pen_name) :
         token_type, token_value, token_line = self.tokens[self.current]
         if pen_name not in self.variables:
@@ -278,7 +283,6 @@ class Parser:
                 
             
         elif attribute == "color":
-            print("45654")
             value = self.parse_function_call("defineColor")
         else:
             raise SyntaxErrorWithLine(token_line, f"Variable '{attribute}' is not a valid pen attribute")
@@ -292,92 +296,62 @@ class Parser:
             "value": value
         }
 
-    # Parses function calls ensuring the function has been previously declared
-    def parse_function_call(self,name=None):
+    def parse_function_call(self, name=None):
         # Récupérer le nom de la fonction et vérifier qu'elle est bien déclarée
         if name is not None:
             func_name = name
             self.consume("IDENTIFIER")
-        else :
+        else:
             func_name = self.consume("IDENTIFIER")
         
         if func_name not in self.functions:
             raise SyntaxErrorWithLine(self.get_line(), f"Function '{func_name}' is not declared.")
         
         self.consume("SYMBOL")  # Consommer '('
-        print("--444-")
         # Récupérer les types et noms des paramètres attendus pour la fonction
-        param_types = self.functions[func_name][1]
-
+        param_defs = self.functions[func_name][1]
+        
         actual_args = []
-
-        # Vérifier que le premier token n'est pas ')' pour gérer les fonctions sans arguments
-        
-        params = []
         if self.tokens[self.current][1] != ")":
-            lst1 = self.parse_expression_condition()
-            params.append(lst1)
-            while self.tokens[self.current][1] == ",":
-                self.consume("SYMBOL")
-                lst = self.parse_expression_condition()
-                params.append(lst)
-        self.consume("SYMBOL")  # Consommer ')'
-
-        """# Vérifier le nombre d'arguments
-        if len(param_types) != len(actual_args):
-            raise SyntaxErrorWithLine(self.get_line(), f"Function '{func_name}' expects {len(param_types)} arguments, got {len(actual_args)}.")
-
-        # Vérifier le type de chaque argument ------------NOT SUR ----------
+            while True:
+                
+                arg_value = self.parse_expression_condition()  # Assurez-vous que cette méthode renvoie (valeur, type)
+                actual_args.append(arg_value)
+                if self.tokens[self.current][1] == ",":
+                    self.consume("SYMBOL")
+                elif self.tokens[self.current][1] == ")":
+                    break
+                else:
+                    raise SyntaxErrorWithLine(self.get_line(), "Expected ',' or ')' in function call")
+                
+            
         
-        for (expected_type, _), (actual_arg, actual_type) in zip(param_types, actual_args):
+        self.consume("SYMBOL")  # Consommer ')'
+        
+        # Vérifier le nombre d'arguments
+        if len(param_defs) != len(actual_args):
+            raise SyntaxErrorWithLine(self.get_line(), f"Function '{func_name}' expects {len(param_defs)} arguments, got {len(actual_args)}.")
+
+        # Type checking
+        for (expected_type, _), arg_expr in zip(param_defs, actual_args):
+            
+            if identifier_pattern.match(arg_expr) is not None:
+                actual_type = self.find_variable_type(arg_expr)
+                print(actual_type)
+            elif number_pattern.match(arg_expr) is not None :
+                
+                if "." in arg_expr :
+                    actual_type = "float"
+                else :
+                    actual_type = "int"
+            else :
+                raise SyntaxErrorWithLine(self.get_line(), f"Type mismatch for function '{func_name}': unknown type : {expected_type}, got {arg_expr}")
             if expected_type != actual_type:
-                raise SyntaxErrorWithLine(self.get_line(), f"Type mismatch for function '{func_name}': expected {expected_type}, got {actual_type}")
-        """
-        return {"type": "function_call", "name": func_name, "args": params}
+                raise SyntaxErrorWithLine(self.get_line(), f"Type mismatch for function '{func_name}': expected {expected_type}, got {arg_expr}")
+            
+        return {"type": "function_call", "name": func_name, "args": [arg[0] for arg in actual_args]}  # retourne seulement les valeurs des arguments
 
-    def parse_args(self):
-        """
-        Parses a single argument for a function call. This can be an identifier, a number, 
-        or a more complex expression. Assumes that arguments are separated by commas and
-        the list of arguments is terminated by a closing parenthesis.
-        """
-        token_type, token_value, token_line = self._current_token()
-
-        if token_type == "IDENTIFIER":
-            # Check if it's a function call
-            if self.peek_next_token() == "(":
-                # This is a function call within the arguments
-                self.consume("IDENTIFIER")  # Consume the function name
-                self.consume("SYMBOL")      # Consume the '('
-                return self.parse_function_call(token_value)  # token_value is the function name
-            else:
-                # It's a simple variable, consume it and check if declared
-                if not self.is_variable_declared(token_value):
-                    raise SyntaxErrorWithLine(token_line, f"Undefined variable '{token_value}'")
-                var_type = self.find_variable_type(token_value)
-                self.consume("IDENTIFIER")
-                return token_value, var_type
-
-        elif token_type == "NUMBER":
-            # Simply return the number and its type ('int' or 'float')
-            num_value = self.consume("NUMBER")
-            if '.' in num_value:
-                return num_value, "float"
-            else:
-                return num_value, "int"
-
-        else:
-            raise SyntaxErrorWithLine(token_line, f"Invalid argument type: {token_value}")
-
-    def peek_next_token(self):
-        """
-        Peeks at the next token without consuming it, to check what it is.
-        """
-        if self.current + 1 < len(self.tokens):
-            next_type, next_value, next_line = self.tokens[self.current + 1]
-            return next_value
-        return None
-
+        
 
         # Here you should add code to check the types of actual_args against params
 
@@ -813,9 +787,6 @@ class Parser:
             self.functions[func_name] = (return_type, params)
             for param_type, param_name in params:
                 self.declare_variable(param_name, param_type)  # Déclare les paramètres comme variables locales si nécessaire
-        
-        #self.functions_vars = {}
-        #self.func_vars = 0
         while self.current < len(self.tokens):
             statement = self.parse_statement()
             ast.append(statement)
@@ -936,12 +907,9 @@ def main(input_file, line_numbers=None):
         print(f"Compilation successful! C code has been generated in {output_file}.")
     except SyntaxErrorWithLine as e:
         # If a syntax error is caught, it is printed and returned as a dictionary
-        print(e.line)
-        print(e.message)
         return {e.line: e.message}
     except Exception as e:
         # Other exceptions are logged as errors
-        print(e)
         return {"General error":e}
 
 
