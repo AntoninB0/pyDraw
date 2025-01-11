@@ -3,7 +3,7 @@ import re
 # Define token types for lexical analysis
 TOKENS = [
     ("COMMENT", r"//.*"),  # Single-line comments
-    ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|wait|skip|leave|break|return|cursor|walk|goTo|circle|fillColor|clearMatrix|compareSDLColors|defineColor|approxPosX|approxPosY|approxPos|float2Rad|pixelColor|circleWrite|rotateArea|copyPaste|copy|paste|cut|translation|waitKey|closeEventSDL|renderMatrix|initSDL)\b"),  # Recognized keywords
+    ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|wait|skip|leave|break|return|cursor|walk|goTo|circle|fillColor|compareSDLColors|defineColor|approxPosX|approxPosY|approxPos|float2Rad|pixelColor|circleWrite|rotateArea|copyPaste|copy|paste|cut|translation|waitKey|closeEventSDL|renderMatrix|initSDL)\b"),  # Recognized keywords
     ("NUMBER", r"-?\b\d+(\.\d+)?\b"),  # Handles negative and positive, integer and decimal numbers
     ("OPERATOR", r"[=+\-*/><!&|]{1,2}"),  # Operators include arithmetic, logical, and comparison
     ("SYMBOL", r"[{}();,.]"),  # Punctuation symbols used for syntax
@@ -279,7 +279,8 @@ class Parser:
                 
             
         elif attribute == "color":
-            value = self.consume("STRING")
+            print("45654")
+            value = self.parse_function_call("defineColor")
         else:
             raise SyntaxErrorWithLine(token_line, f"Variable '{attribute}' is not a valid pen attribute")
         
@@ -300,11 +301,12 @@ class Parser:
             self.consume("IDENTIFIER")
         else :
             func_name = self.consume("IDENTIFIER")
-   
+        
         if func_name not in self.functions:
             raise SyntaxErrorWithLine(self.get_line(), f"Function '{func_name}' is not declared.")
-        self.consume("SYMBOL")  # Consommer '('
         
+        self.consume("SYMBOL")  # Consommer '('
+        print("--444-")
         # Récupérer les types et noms des paramètres attendus pour la fonction
         param_types = self.functions[func_name][1]
 
@@ -836,6 +838,16 @@ class Parser:
         ast = []
         self.variables = {} # Save declared variables
         self.functions = {} # Save declared func
+        func_name = "defineColor"
+        return_type = "int"  # Assumant que defineColor ne retourne rien
+        params = [("string", "colorCode")]  # Le paramètre attend un code couleur en string
+
+        if func_name not in self.functions:
+            self.functions[func_name] = (return_type, params)
+            for param_type, param_name in params:
+                self.declare_variable(param_name, param_type)  # Déclare les paramètres comme variables locales si nécessaire
+        
+        print(self.functions)
         #self.functions_vars = {}
         #self.func_vars = 0
         while self.current < len(self.tokens):
@@ -912,8 +924,10 @@ def generate_c_code(ast, lst, current_line):
                 else_body, current_line = generate_c_code(node["else"],lst,current_line)
                 c_code.append(f"else {{\n{else_body}\n}}")
         elif node["type"] == "pen_attribute":
-            
-            c_code.append(f"{node['name']}.{node['attribute']} = {node['value']};")
+            if node['attribute'] == "color":
+                c_code.append(f"{node['name']}.{node['attribute']} = {node['value']["name"]}({node['value']["args"]});")
+            else :
+                c_code.append(f"{node['name']}.{node['attribute']} = {node['value']};")
         elif node["type"] == "method_call":
             params = ", ".join(map(str, node["params"]))
             
