@@ -917,7 +917,7 @@ def write_file(filename, content):
 import sys, ast as at
 # Main function to execute the compiler process
 def main(input_file, line_numbers=None):
-    output_file = "../../c/src/main.c"  # Chemin du fichier de sortie défini dans le code
+    output_file = "./c/src/main.c"  # Chemin du fichier de sortie défini dans le code
     lst = line_numbers if line_numbers else []  # Utiliser les numéros de ligne fournis ou une liste vide
 
     """lst = []  # Default to an empty list if no arguments are provided
