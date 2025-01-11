@@ -3,7 +3,7 @@ import re
 # Define token types for lexical analysis
 TOKENS = [
     ("COMMENT", r"//.*"),  # Single-line comments
-      ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|wait|skip|leave|break|return|cursor|down|up|walk|goTo|jumpTo|rectangle|circle|triangleIso|rotateCW|rotateCCW|fillColor|initMatrix|clearMatrix|compareSDLColors|defineColor|approxPosX|approxPosY|approxPos|float2Rad|pixelColor|circleWrite|rotateArea|copyPaste|copy|paste|cut|translation|waitKey|closeEventSDL|renderMatrix|initSDL)\b"),  # Recognized keywords
+    ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|wait|skip|leave|break|return|cursor|walk|goTo|circle|fillColor|compareSDLColors|approxPosX|approxPosY|approxPos|float2Rad|pixelColor|circleWrite|clearMatrix|rotateArea|copyPaste|copy|paste|cut|translation|waitKey|closeEventSDL|renderMatrix|initSDL)\b"),  # Recognized keywords
     ("NUMBER", r"-?\b\d+(\.\d+)?\b"),  # Handles negative and positive, integer and decimal numbers
     ("OPERATOR", r"[=+\-*/><!&|]{1,2}"),  # Operators include arithmetic, logical, and comparison
     ("SYMBOL", r"[{}();,.]"),  # Punctuation symbols used for syntax
@@ -921,7 +921,7 @@ def write_file(filename, content):
 import sys, ast as at
 # Main function to execute the compiler process
 def main(input_file, line_numbers=None):
-    output_file = "./c/src/main.c"  # Chemin du fichier de sortie défini dans le code
+    output_file = "../../c/src/main.c"  # Chemin du fichier de sortie défini dans le code
     lst = line_numbers if line_numbers else []  # Utiliser les numéros de ligne fournis ou une liste vide
     try:
         pydraw_code = read_file(input_file)
