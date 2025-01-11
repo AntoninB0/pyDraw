@@ -4,12 +4,13 @@ import re
 TOKENS = [
     ("COMMENT", r"//.*"),  # Single-line comments
     ("KEYWORD", r"\b(int|float|bool|string|pen|func|void|if|else|elseif|repeat|while|wait|skip|leave|break|return|cursor|down|up|walk|goTo|jumpTo|rectangle|circle|triangleIso|rotateCW|rotateCCW|fillColor|initMatrix|clearMatrix|compareSDLColors|defineColor|approxPosX|approxPosY|approxPos|float2Rad|pixelColor|circleWrite|rotateArea|copyPaste|copy|paste|cut|translation|waitKey|closeEventSDL|renderMatrix|initSDL)\b"),  # Recognized keywords
+    ("NUMBER", r"-?\b\d+(\.\d+)?\b"),  # Handles negative and positive, integer and decimal numbers
     ("OPERATOR", r"[=+\-*/><!&|]{1,2}"),  # Operators include arithmetic, logical, and comparison
     ("SYMBOL", r"[{}();,.]"),  # Punctuation symbols used for syntax
-    ("NUMBER", r"\b\d+(\.\d+)?\b"),  # Decimal and integer numbers
+    
     ("BOOL", r"\b(true|false)\b"),  # Boolean values
     ("STRING", r"\".*?\""),  # String literals enclosed in double quotes
-    ("PEN_ATTRIBUTE", r"\b(color|thickness|positionX|positionY|rotation|speed)\b"),  # Attributes specific to 'pen' objects
+    ("PEN_ATTRIBUTE", r"\b(color|thickness|positionX|positionY|rotation|penDown)\b"),  # Attributes specific to 'pen' objects
     ("IDENTIFIER", r"\b[a-zA-Z_][a-zA-Z0-9_]*\b"),  # Identifiers (variable/function names)
     ("WHITESPACE", r"[ \t\n]+"),  # Whitespace characters (space, tab, newline)
 ]
@@ -62,10 +63,14 @@ class Parser:
     def find_variable_type(self, name):
         if self.func_vars :
             if name in self.functions_vars:
+                if self.functions_vars[name] == "pen":
+                    return "int"
                 return self.functions_vars[name]
             raise Exception(f"Variable '{name}' not declared.")
         else :
             if name in self.variables:
+                if self.functions_vars[name] == "pen":
+                    return "int"
                 return self.variables[name]
             raise Exception(f"Variable '{name}' not declared.")
         
@@ -180,13 +185,13 @@ class Parser:
         self.consume("KEYWORD")   # 'cursor'
         self.consume("SYMBOL")    # '('
         # Parse x value, which can be a NUMBER or an IDENTIFIER referring to a variable
-        x = self.parse_number_or_variable()
+        x, type = self.parse_number_or_variable()
         
         
         self.consume("SYMBOL")    # ','
         
         # Parse y value, which can be a NUMBER or an IDENTIFIER referring to a variable
-        y = self.parse_number_or_variable()
+        y, type = self.parse_number_or_variable()
         self.consume("SYMBOL")    # ')'
         self.consume("SYMBOL")    # ';'
 
@@ -198,13 +203,17 @@ class Parser:
         
         if token_type == "NUMBER":
             self.consume("NUMBER")
-            return token_value  # Return the number as is
+            if "." in token_value :
+                return token_value, "float"
+            else :
+                return token_value, "int"  # Return the number as is
         elif token_type == "IDENTIFIER":
             # Verify the variable is declared and is of a type that can be treated as a number
             var_name = self.consume("IDENTIFIER")
-            if var_name not in self.variables or self.variables[var_name] not in ["int", "float"]:
+            if var_name not in self.variables or self.variables[var_name] not in ["int", "float","pen"]:
                 raise SyntaxErrorWithLine(token_line, f"Variable '{var_name}' is not declared as a numeric type")
-            return var_name  # Return the variable name
+            print(var_name)
+            return var_name, self.variables[var_name] # Return the variable name
         else:
             raise SyntaxErrorWithLine(token_line, f"Expected a number or variable, got '{token_value}'")
     
@@ -223,19 +232,19 @@ class Parser:
         params = []
         if self.tokens[self.current][1] != ")":
             lst1 = self.parse_expression_condition()
-            params.append(lst1[0])
+            params.append(lst1)
             while self.tokens[self.current][1] == ",":
                 self.consume("SYMBOL")
                 lst = self.parse_expression_condition()
-                params.append(lst[0])
+                params.append(lst)
 
         self.consume("SYMBOL")  # ')'
         self.consume("SYMBOL")  # ';'
-
         return {"type": "method_call", "name": pen_name, "method": method, "params": params}
 
     # Parses attribute assignments for 'pen' objects
     def parse_pen_attribute(self, pen_name):
+        
         token_type, token_value, token_line = self.tokens[self.current]
         if pen_name not in self.variables:
             raise SyntaxErrorWithLine(token_line, f"Variable '{pen_name}' is not declared")
@@ -244,10 +253,19 @@ class Parser:
 
         self.consume("SYMBOL")  # '.'
         attribute = self.consume("PEN_ATTRIBUTE")
+        
         self.consume("OPERATOR")
-
-        if attribute in ["rotation","speed","positionY", "positionX","thickness"]:
-            value = self.consume("NUMBER")
+        
+        next_token_type, next_token_value, next_token_line = self.tokens[self.current+1]
+        next3_token_type, next3_token_value, next3_token_line = self.tokens[self.current+3]
+        if attribute in ["rotation","penDown","positionY", "positionX","thickness"]:
+            
+            if next_token_type == "OPERATOR" or next3_token_type == "OPERATOR" :
+                value = self.parse_expression_condition()
+            else :
+                value, type = self.parse_number_or_variable()
+                
+            
         elif attribute == "color":
             value = self.consume("STRING")
         else:
@@ -288,7 +306,6 @@ class Parser:
             while self.tokens[self.current][1] == ",":
                 self.consume("SYMBOL")
                 lst = self.parse_expression_condition()
-                print(lst)
                 params.append(lst)
         self.consume("SYMBOL")  # Consommer ')'
 
@@ -518,13 +535,12 @@ class Parser:
         """
         Parse an expression, including binary operations (e.g., 'num * num').
         """
-        print("----------")
-        
         left = self.parse_term_condition()  # Parse the first operand or term
-        print(left)
+        
         while self.current < len(self.tokens):
             token_type, token_value, token_line = self.tokens[self.current]
             
+
             # Check for an operator
             if token_type == "OPERATOR":
                 operator = self.consume("OPERATOR")
@@ -537,20 +553,17 @@ class Parser:
                     operator = " or "
                     
                 left = f"{left} {operator} {right}"  # Combine into a valid expression
-
+            
             else:
                 break
-        print(left)
         return left
-
 
     def parse_term_condition(self):
         """
         Parse a single term, such as a variable, number, or parenthesized expression.
         """
         token_type, token_value, token_line = self._current_token()
-
-        if token_type == "IDENTIFIER" or token_type == "NUMBER":
+        if token_type == "IDENTIFIER" or token_type == "NUMBER" or token_type == "STRING" or token_type == "PEN_ATTRIBUTE":
             self.current += 1
             return token_value
         else:
@@ -567,6 +580,7 @@ class Parser:
         next_token_type, next_token_value, next_token_line = self.tokens[self.current+1] if (self.current+1) < len(self.tokens) else (None,None,None)
         
         if (token_type == "IDENTIFIER" or token_type == "NUMBER") and next_token_value == ";":
+            #self.parse_number_or_variable()
             if token_type == "IDENTIFIER":
                 if self.is_variable_declared(token_value):
                     var_type = self.find_variable_type(token_value)
@@ -578,12 +592,12 @@ class Parser:
                     raise SyntaxErrorWithLine(token_line, f"Undefined variable '{token_value}'")
             elif token_type == "NUMBER":
                 if '.' in token_value:
-                    name = self.parse_number_or_variable()
+                    name, type = self.parse_number_or_variable()
                     if expected_type != "float" :
                         raise SyntaxErrorWithLine(token_line, f"Wrong variable type '{token_value}'")
                     return name, "float"
                 else:
-                    name = self.parse_number_or_variable()
+                    name, type = self.parse_number_or_variable()
                     if expected_type != "int" :
                         raise SyntaxErrorWithLine(token_line, f"Wrong variable type '{token_value}'")
                     return name, "int"
@@ -602,13 +616,12 @@ class Parser:
                             
                             func = self.parse_function_call(token_value)
                             token_type, token_value, token_line = self._current_token()
-                            print("--------------")
+                            
                             return_type, params =self.functions[func["name"]]
-                            print(return_type)
-                            print(expected_type)
+                            
                             if return_type != expected_type :
                                 raise SyntaxErrorWithLine(token_line, f"Wrong return function type '{func["name"]}'")
-                            print(func["args"])
+                            
                             if self.tokens[self.current][1] == ";": 
                                 func_call = func["name"] + "(" + ", ".join(map(str, (func["args"]))) + ")"
                                 expr_value += func_call
@@ -630,12 +643,12 @@ class Parser:
                             
                 elif token_type == "NUMBER": # and expected_type is not None:               
                     if '.' in token_value:
-                        name = self.parse_number_or_variable()
+                        name, type = self.parse_number_or_variable()
                         if expected_type != "float" :
                             raise SyntaxErrorWithLine(token_line, f"Wrong variable type '{token_value}'")
                         expr_value += name
                     else:
-                        name = self.parse_number_or_variable()
+                        name, type = self.parse_number_or_variable()
                         if expected_type != "int" :
                             raise SyntaxErrorWithLine(token_line, f"Wrong variable type '{token_value}'")
                         expr_value += name
@@ -733,7 +746,7 @@ class Parser:
             pen_name_t, pen_name_val, pen_name_line = self.tokens[self.current]
             self.current += 1  # consume the identifier
             if pen_name_val not in self.variables:
-                raise SyntaxErrorWithLine(pen_name_line, f"PEN '{pen_name_val}' not declared.")
+                raise SyntaxErrorWithLine(pen_name_line, f"Pen '{pen_name_val}' not declared.")
             # Peek at the next token
             next_next_type, next_next_val, next_next_line = self.tokens[self.current+1]
             if next_next_type == "PEN_ATTRIBUTE":
@@ -825,7 +838,7 @@ def generate_c_code(ast, lst, current_line):
             else:
                 c_code.append(f"{node['var_type']} {node['name']} = {value};")
         elif node["type"] == "pen_decl":
-            c_code.append(f"PEN {node['name']} = createPen({node['x']}, {node['y']});")
+            c_code.append(f"Pen {node['name']} = createPen({node['x']}, {node['y']});")
         elif node["type"] == "pen_method":
             params = ", ".join(map(str, node.get("params", [])))
             c_code.append(f"{node['name']}.{node['method']}({params});")
@@ -876,11 +889,14 @@ def generate_c_code(ast, lst, current_line):
                 else_body, current_line = generate_c_code(node["else"],lst,current_line)
                 c_code.append(f"else {{\n{else_body}\n}}")
         elif node["type"] == "pen_attribute":
+            
             c_code.append(f"{node['name']}.{node['attribute']} = {node['value']};")
         elif node["type"] == "method_call":
             params = ", ".join(map(str, node["params"]))
             
             if len(node["params"]) > 0:
+                print("************")
+                print(params)
                 c_code.append(f"{node['method']}({node['name']},{params});")
             else:
                 c_code.append(f"{node['method']}({node['name']});")
@@ -901,7 +917,7 @@ def write_file(filename, content):
 import sys, ast as at
 # Main function to execute the compiler process
 def main(input_file, line_numbers=None):
-    output_file = "./c/src/main.c"  # Chemin du fichier de sortie défini dans le code
+    output_file = "../../c/src/main.c"  # Chemin du fichier de sortie défini dans le code
     lst = line_numbers if line_numbers else []  # Utiliser les numéros de ligne fournis ou une liste vide
 
     """lst = []  # Default to an empty list if no arguments are provided
