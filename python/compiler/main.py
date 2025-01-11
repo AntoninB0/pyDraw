@@ -767,7 +767,7 @@ class Parser:
             self.current += 1  # consume the identifier
             
             if pen_name_val not in self.variables:
-                raise SyntaxErrorWithLine(pen_name_line, f"Pen '{pen_name_val}' not declared.")
+                raise SyntaxErrorWithLine(pen_name_line, f"PEN '{pen_name_val}' not declared.")
             # Peek at the next token
             next_next_type, next_next_val, next_next_line = self.tokens[self.current+1]
             if next_next_type == "PEN_ATTRIBUTE":
@@ -859,7 +859,7 @@ def generate_c_code(ast, lst, current_line):
             else:
                 c_code.append(f"{node['var_type']} {node['name']} = {value};")
         elif node["type"] == "pen_decl":
-            c_code.append(f"Pen {node['name']} = createPen({node['x']}, {node['y']});")
+            c_code.append(f"PEN {node['name']} = createPen({node['x']}, {node['y']});")
         elif node["type"] == "pen_method":
             params = ", ".join(map(str, node.get("params", [])))
             c_code.append(f"{node['name']}.{node['method']}({params});")
