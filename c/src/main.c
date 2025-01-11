@@ -13,6 +13,7 @@ p1 = walk(p1,100);
 p1 = goTo(p1,200, 200);
 p1.rotation = 470;
 p1 = walk(p1,100);
+WAIT
 int y = height/2;
 fillColor(300, 200, "0000ff");
 int test(int a) {
