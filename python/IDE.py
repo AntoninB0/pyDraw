@@ -40,7 +40,7 @@ class TextEditor:
         self.triangle_canvas.pack(side='left')
         
         # Draw green triangle
-        self.triangle_canvas.create_polygon(5, 25, 25, 25, 15, 5, fill='green', outline='black')
+        self.triangle_canvas.create_polygon(5, 15, 25, 5, 25, 25, fill='green', outline='black')
        
         self.triangle_canvas.bind("<Button-1>", lambda event: self.run_action())
                
@@ -49,7 +49,7 @@ class TextEditor:
         self.close_button.pack(side='right')
                
         #clear terminal
-        self.clear_button = tk.Button(self.toolbar, text="Clear", command=self.clear_terminal)
+        self.clear_button = tk.Button(self.toolbar, text="Nettoyer terminal", command=self.clear_terminal)
         self.clear_button.pack(side='right')
        
         #for choose a width of the feneter
@@ -272,7 +272,7 @@ class TextEditor:
            
             #Watch state of the line
             state = self.line_states[file_path].get(line_num, False)
-            color = "green" if state else "black"
+            color = "red" if state else "black"
            
             # add a widget for see a line number on the ide
             line_numbers.create_text(2, y, anchor="nw", text=line_num, fill=color, font=("Helvetica", 10))
