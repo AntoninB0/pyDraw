@@ -40,7 +40,7 @@ class TextEditor:
         self.triangle_canvas.pack(side='left')
         
         # Draw green triangle
-       self.triangle_canvas.create_polygon(25, 15, 5, 5, 5, 25, fill='green', outline='black')
+        self.triangle_canvas.create_polygon(25, 15, 5, 5, 5, 25, fill='green', outline='black')
 
        
         self.triangle_canvas.bind("<Button-1>", lambda event: self.run_action())
