@@ -127,6 +127,40 @@ class Parser:
                 raise SyntaxErrorWithLine(self.get_line(), f"Variable '{name}' already declared in this scope.")
             self.variables[name] = var_type
 
+    def get_expression_type(self, expr, expected_type):
+        code = tokenize(expr)
+        i = 0  # Utilisez un index pour parcourir la liste de tokens
+        while i < len(code):
+            token = code[i]
+            if token[0] == "IDENTIFIER":
+                # Vérifiez si le token suivant est une parenthèse ouvrante, indiquant un appel de fonction
+                if i + 1 < len(code) and code[i + 1][1] == "|":
+                    i += 1  # Avancez à la parenthèse ouvrante
+                    # Avancez dans les tokens jusqu'à trouver la parenthèse fermante correspondante
+                    while i < len(code) and code[i][1] != "|":
+                        i += 1
+                    func = self.find_function(token)
+                    var_type = func["return_type"]
+                    
+                elif i + 1 < len(code) and code[i + 1][1] == ".":
+                    
+                    i += 2  # Sautez le point et l'attribut/méthode suivant
+                    var_type = self.find_variable_type(token[1])
+                else:
+                    # C'est un identifiant qui n'est pas suivi par '(' ou '.', donc c'est une variable
+                    var_type = self.find_variable_type(token[1])
+            elif token[0] == "NUMBER":
+                if "." in token[1]:
+                    var_type = "float"
+                else:
+                    var_type = "int"
+            if var_type != expected_type:
+                raise SyntaxErrorWithLine(self.get_line(), f"Expected expression with only {expected_type} variable but got {token[1]} which type is {var_type}")
+
+            i += 1  # Avancez à chaque itération de la boucle
+        return expected_type
+
+        
     def get_line(self):
         """Get the current line number from the tokens."""
         _, _, line = self.tokens[self.current]
@@ -348,21 +382,22 @@ class Parser:
         
         # Type checking
         for (expected_type, _), arg_expr in zip(param_defs, actual_args):
-            if not expression_pattern.match(arg_expr):
-                if identifier_pattern.match(arg_expr) is not None:
-                    actual_type = self.find_variable_type(arg_expr)
-                elif number_pattern.match(arg_expr) is not None :
-                    
-                    if "." in arg_expr :
-                        actual_type = "float"
-                    else :
-                        actual_type = "int"
-                elif '"' in arg_expr :
-                    actual_type = "string"
-                else:
-                    raise SyntaxErrorWithLine(self.get_line(), f"Type mismatch for function '{func_name}': unknown type : {expected_type}, got {arg_expr}")
-                if expected_type != actual_type:
-                    raise SyntaxErrorWithLine(self.get_line(), f"Type mismatch for function '{func_name}': expected {expected_type}, got {arg_expr}")
+            if expression_pattern.match(arg_expr):
+                actual_type = self.get_expression_type(arg_expr,expected_type)
+            elif identifier_pattern.match(arg_expr) is not None:
+                actual_type = self.find_variable_type(arg_expr)
+            elif number_pattern.match(arg_expr) is not None :
+                
+                if "." in arg_expr :
+                    actual_type = "float"
+                else :
+                    actual_type = "int"
+            elif '"' in arg_expr :
+                actual_type = "string"
+            else:
+                raise SyntaxErrorWithLine(self.get_line(), f"Type mismatch for function '{func_name}': unknown type : {expected_type}, got {arg_expr}")
+            if expected_type != actual_type:
+                raise SyntaxErrorWithLine(self.get_line(), f"Type mismatch for function '{func_name}': expected {expected_type}, got {arg_expr}")
         return {"type": "function_call", "name": func_name, "args": [arg for arg in actual_args]}  # retourne seulement les valeurs des arguments
 
         
@@ -906,7 +941,7 @@ def write_file(filename, content):
 import sys, ast as at
 # Main function to execute the compiler process
 def main(input_file, line_numbers=None):
-    output_file = "./c/src/main.c"  # Chemin du fichier de sortie défini dans le code
+    output_file = "../../c/src/main.c"  # Chemin du fichier de sortie défini dans le code
     lst = line_numbers if line_numbers else []  # Utiliser les numéros de ligne fournis ou une liste vide
     try:
         pydraw_code = read_file(input_file)
@@ -921,10 +956,12 @@ def main(input_file, line_numbers=None):
         print(f"Compilation successful! C code has been generated in {output_file}.")
     except SyntaxErrorWithLine as e:
         # If a syntax error is caught, it is printed and returned as a dictionary
+        print(e)
         return {e.line: e.message}
     
     except Exception as e:
         # Other exceptions are logged as errors
+        print(e)
         return {"General error":e}
 
 
