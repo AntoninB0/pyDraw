@@ -16,6 +16,8 @@ TOKENS = [
 # Pattern pour identifier
 identifier_pattern = re.compile(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b")
 
+# Pattern pour identifier une expression :
+expression_pattern = re.compile(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b|[-+]?\b\d*\.?\d+\b|[+\-*/()]")
 # Pattern pour number
 number_pattern = re.compile(r"-?\b\d+(\.\d+)?\b")
 def tokenize(code):
@@ -239,6 +241,11 @@ class Parser:
                 self.consume("SYMBOL")
                 lst = self.parse_expression_condition()
                 params.append(lst)
+        if method in ["walk","goTo"]:
+            for e in params :
+                if not expression_pattern.match(e):
+                    if int(e) < 0 :
+                        raise SyntaxErrorWithLine(token_line, f"Expected argument >= 0 but got {e}")
 
         self.consume("SYMBOL")  # ')'
         self.consume("SYMBOL")  # ';'
@@ -280,8 +287,17 @@ class Parser:
                 value, type = self.parse_expression("int")
             else :
                 value, type = self.parse_number_or_variable()
+                if not expression_pattern.match(value):
+                    if attribute in ["positionY", "positionX", "penDown"] :
+                        if int(value) < 0 :
+                            raise SyntaxErrorWithLine(token_line, f"The value of {attribute} must be >= 0, but got {value} ")
+                    elif attribute == "thickness":
+                        if int(value) < 1 :
+                            raise SyntaxErrorWithLine(token_line, f"The value of {attribute} must be >= 1, but got {value} ")
+                    elif attribute == "rotation":
+                        if int(value) > 90 or int(value) < 0:
+                            raise SyntaxErrorWithLine(token_line, f"The value of {attribute} must be between 0 and 90, but got {value} ")
                 
-            
         elif attribute == "color":
             value = self.parse_function_call("defineColor")
         else:
@@ -314,7 +330,6 @@ class Parser:
         actual_args = []
         if self.tokens[self.current][1] != ")":
             while True:
-                
                 arg_value = self.parse_expression_condition()  # Assurez-vous que cette méthode renvoie (valeur, type)
                 actual_args.append(arg_value)
                 if self.tokens[self.current][1] == ",":
@@ -324,32 +339,31 @@ class Parser:
                 else:
                     raise SyntaxErrorWithLine(self.get_line(), "Expected ',' or ')' in function call")
                 
-            
         
         self.consume("SYMBOL")  # Consommer ')'
         
         # Vérifier le nombre d'arguments
         if len(param_defs) != len(actual_args):
             raise SyntaxErrorWithLine(self.get_line(), f"Function '{func_name}' expects {len(param_defs)} arguments, got {len(actual_args)}.")
-
+        
         # Type checking
         for (expected_type, _), arg_expr in zip(param_defs, actual_args):
-            
-            if identifier_pattern.match(arg_expr) is not None:
-                actual_type = self.find_variable_type(arg_expr)
-                print(actual_type)
-            elif number_pattern.match(arg_expr) is not None :
-                
-                if "." in arg_expr :
-                    actual_type = "float"
-                else :
-                    actual_type = "int"
-            else :
-                raise SyntaxErrorWithLine(self.get_line(), f"Type mismatch for function '{func_name}': unknown type : {expected_type}, got {arg_expr}")
-            if expected_type != actual_type:
-                raise SyntaxErrorWithLine(self.get_line(), f"Type mismatch for function '{func_name}': expected {expected_type}, got {arg_expr}")
-            
-        return {"type": "function_call", "name": func_name, "args": [arg[0] for arg in actual_args]}  # retourne seulement les valeurs des arguments
+            if not expression_pattern.match(arg_expr):
+                if identifier_pattern.match(arg_expr) is not None:
+                    actual_type = self.find_variable_type(arg_expr)
+                elif number_pattern.match(arg_expr) is not None :
+                    
+                    if "." in arg_expr :
+                        actual_type = "float"
+                    else :
+                        actual_type = "int"
+                elif '"' in arg_expr :
+                    actual_type = "string"
+                else:
+                    raise SyntaxErrorWithLine(self.get_line(), f"Type mismatch for function '{func_name}': unknown type : {expected_type}, got {arg_expr}")
+                if expected_type != actual_type:
+                    raise SyntaxErrorWithLine(self.get_line(), f"Type mismatch for function '{func_name}': expected {expected_type}, got {arg_expr}")
+        return {"type": "function_call", "name": func_name, "args": [arg for arg in actual_args]}  # retourne seulement les valeurs des arguments
 
         
 
@@ -371,6 +385,7 @@ class Parser:
         
         while self.tokens[self.current][1] != ")":
             param_type = self.consume("KEYWORD")
+            
             param_name = self.consume("IDENTIFIER")
             params.append((param_type, param_name))
             if self.tokens[self.current][1] == ",":
@@ -811,7 +826,6 @@ def generate_c_code(ast, lst, current_line):
             c_code.append(f"PEN {node['name']} = createPen({node['x']}, {node['y']});")
         elif node["type"] == "pen_method":
             
-            
             params = ", ".join(map(str, node.get("params", [])))
             c_code.append(f"{node['name']}.{node['method']}({params});")
         elif node["type"] == "function_call":
@@ -908,6 +922,7 @@ def main(input_file, line_numbers=None):
     except SyntaxErrorWithLine as e:
         # If a syntax error is caught, it is printed and returned as a dictionary
         return {e.line: e.message}
+    
     except Exception as e:
         # Other exceptions are logged as errors
         return {"General error":e}
