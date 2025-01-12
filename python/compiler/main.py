@@ -941,7 +941,7 @@ def write_file(filename, content):
 import sys, ast as at
 # Main function to execute the compiler process
 def main(input_file, line_numbers=None):
-    output_file = "../../c/src/main.c"  # Chemin du fichier de sortie défini dans le code
+    output_file = "./c/src/main.c"  # Chemin du fichier de sortie défini dans le code
     lst = line_numbers if line_numbers else []  # Utiliser les numéros de ligne fournis ou une liste vide
     try:
         pydraw_code = read_file(input_file)
@@ -956,12 +956,10 @@ def main(input_file, line_numbers=None):
         print(f"Compilation successful! C code has been generated in {output_file}.")
     except SyntaxErrorWithLine as e:
         # If a syntax error is caught, it is printed and returned as a dictionary
-        print(e)
         return {e.line: e.message}
     
     except Exception as e:
         # Other exceptions are logged as errors
-        print(e)
         return {"General error":e}
 
 
