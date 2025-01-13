@@ -1,5 +1,0 @@
-/home/cytech/Desktop/pd/pyDraw/c/CMakeFiles/pyDrawExec.dir
-/home/cytech/Desktop/pd/pyDraw/c/CMakeFiles/cleaning.dir
-/home/cytech/Desktop/pd/pyDraw/c/CMakeFiles/run.dir
-/home/cytech/Desktop/pd/pyDraw/c/CMakeFiles/edit_cache.dir
-/home/cytech/Desktop/pd/pyDraw/c/CMakeFiles/rebuild_cache.dir
