@@ -15,12 +15,20 @@ sudo make install
 sudo apt-get install libsdl2-gfx-dev
 ```
     
-## Run C Prog
+## Init Prog
 
 ```bash
 cd c
-make -f ./MAKEFILE run
+cmake ./CMakeList.txt
 ```
+
+## Run Prog
+
+```bash
+cd ./PYDRAW
+python3 ./python/IDE.py
+```
+
 
 ## Github Basic Setup
 
