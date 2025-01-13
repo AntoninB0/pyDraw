@@ -6,7 +6,8 @@ pen p = cursor(width, height);
 pen p1 = cursor(0, 0);  
 
 p1.walk(100); 
-p1.goTo(200,0);
+
+p1.goTo(200,20);
 p1.rotation = 270;
 p1.walk(100); 
 
@@ -27,6 +28,7 @@ p.circle(300);
 fillColor(width/2,height/2,"f0f00f");
 p.rotation = 50;
 p.walk(100);
+
 
 p.rotation = 150;
 p.rotation = p.rotation + 70; 
@@ -70,14 +72,28 @@ translation(100,50, 400, 200, 100, 20, -5);
 fillColor(500, 500,"FFFF00");
 
 
-waitKey();
+
 
 clearMatrix("FF0000");
 
-waitKey();
+
 
 clearMatrix("00FF00");
 //.*clearMatrix("0000FF");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

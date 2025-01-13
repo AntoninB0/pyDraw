@@ -7,13 +7,12 @@ int height = 1080;
 PEN p = createPen(width, height);
 PEN p1 = createPen(0, 0);
 p1 = walk(p1,100);
-p1 = goTo(p1,200, 0);
+p1 = goTo(p1,200, 20);
 p1.rotation = 270;
 p1 = walk(p1,100);
 p1 = goTo(p1,200, 200);
 p1.rotation = 470;
 p1 = walk(p1,100);
-WAIT
 int y = height/2;
 fillColor(300, 200, "0000ff");
 int test(int a) {
@@ -56,9 +55,7 @@ translation(100, 100, 400, 200, 100, 20, 2);
 translation(width / 2 + 200, height / 2 + 200, 400, 200, 100, 20, 10);
 translation(100, 50, 400, 200, 100, 20, -5);
 fillColor(500, 500, "FFFF00");
-waitKey();
 clearMatrix("FF0000");
-waitKey();
 clearMatrix("00FF00");
 closeEventSDL();
 return 0;
