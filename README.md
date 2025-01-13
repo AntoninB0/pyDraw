@@ -19,7 +19,7 @@ sudo apt-get install libsdl2-gfx-dev
 
 ```bash
 cd c
-cmake ./CMakeList.txt
+cmake ./CMakeLists.txt
 ```
 
 ## Run Prog
