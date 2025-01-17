@@ -1,24 +1,28 @@
 # pyDraw
 
 
+## Install Cmake
+
+```bash
+sudo apt install cmake
+```
+
 ## Install SDL2
 
 ```bash
+cd
 git clone https://github.com/libsdl-org/SDL.git
 cd SDL
-mkdir build
-cd build
-../configure
-make
-sudo make install 
-
+cmake ./CMakeList.txt
 sudo apt-get install libsdl2-gfx-dev
 ```
     
 ## Init Prog
 
 ```bash
-cd c
+git clone https://github.com/AntoninB0/pyDraw.git
+cd ./PYDRAW
+cd ./c
 cmake ./CMakeLists.txt
 ```
 

@@ -1,1 +1,104 @@
+Le langage PyDraw vous permet de realiser de superbes dessins a l'aide de commandes.
+
+----------------------------------------
+
+Ce langage inclus les types suivants :
+int / float / bool / string / pen (voir details plus bas pour ce type)
+
+----------------------------------------
+
+Chaque ligne doit se terminer par un ';'
+
+----------------------------------------
+
+Declarer une variable :
+[type] [nom] = [valeur (optionel)];
+
+----------------------------------------
+
+Bloc conditionnel :
+if([condition]){
+
+}
+elseif([condition]){
+
+}
+else{
+
+}
+
+----------------------------------------
+
+Boucle :
+
+repeat(i,i<10,i++){
+
+}
+----------
+skip --> passe a l'iteration suivante de la boucle
+leave --> sort de la boucle
+
+----------------------------------------
+
+Declarer une fonction :
+func [type de retour (void si pas de retour)] nomFonction(int a, float b){
+	CODE DE LA FONCTION
+	return a+b;
+}
+
+
+
+--------------------------------------------------------------------------------
+
+
+
+Les pen servent a dessiner. On declare un pen avec la fonction cursor() qui prend en parametre la position d'apparition du pen :
+	pen superStylo = cursor(0,0)
+
+--------------------
+
+Voici les differents attributs des pen :
+color (=defineColor(code hexadecimal) ceci permet de changer la couleur du pen. Il faut utiliser la fonction defineColor car SDL prend en parametre un code RGB, il faut donc traduire le code hexadecimal en RGB
+	superStylo.color=defineColor(“00FFFF”);
+
+thickness (int >= 1) change l’epaisseur du pen
+	superStylo.thickness=5;
+
+rotation (float qui correspond a un angle en degres. 0 = pointe vers la droite et 90 = pointe vers le haut)
+	superStylo.rotation=90;
+
+penDown (int 1 ou 0) = lève ou baisse le pen (1 = stylo baissé qui dessine/ 0 = stylo levé qui ne dessine pas)
+	superStylo.penDown = 1 ;
+
+--------------------
+
+Voici les differentes methodes des pen :
+
+
+walk(int n >= 0) --> fait avancer le pen de n pixels
+
+goTo(int x >= 0, int y >= 0) --> fait aller le pen jusqu'à la position demandee sans dessiner
+
+----------
+
+circle(int r >= 1) --> dessine un cercle de rayon r
+
+Pour utiliser une methode : superStylo.methode();
+
+
+
+
+
+
+Fonction pour interagir avec la zone de dessin :
+
+fillColor(int x >= 0, int y >= 0, string c) --> se rend au pixel de position (x,y) et change la couleur de tous les pixels adjacents qui sont de la même couleur, en la couleur passee en parametre (code hexadecimal)
+
+translation(int x, int y, int l, int h, int distance, int rotation, int precision > 0) --> se rend au pixel de position (x,y), selectionne une zone de longeur l et hauteur h, effectue une translation de distance pixel en prenant en compte la rotation. Plus la precision est elevee, plus la translation effectuera de copie colle de la zone selectionnee
+
+rotateArea(int x, int y, int l, int h, int rotation) --> se rend au pixel (x,y), selectionne une zone de longueur l et hauteur h et effectue une rotation de cette zone
+
+waitKey(); --> fait une pause dans l’execution du script. Pour reprendre le script, cliquer sur une touche du clavier
+
+clearMatrix(string c) --> reset toute la zone de dessin en un fond de la couleur passee en argument
 
